@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "dyag"
+version = "0.4.0"
+description = "Dyag - Markdown to HTML converter with diagram support (Graphviz, PlantUML, Mermaid)"
+authors = ["MARCHAL Hervé <herve.marchal@developpement-durable.gouv.fr>"]
+readme = "README.md"
+packages = [{include = "dyag", from = "src"}]
+
+[tool.poetry.scripts]
+dyag = "dyag.main:main"
+dyag-mcp = "dyag.mcp_server:main"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+Pillow = "^10.0.0"
+PyMuPDF = "^1.23.0"
+playwright = "^1.40.0"
+markdown = "^3.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
+pytest-cov = "^4.0"
+pytest-mock = "^3.10"
+black = "^23.0"
+flake8 = "^6.0"
+commitizen = "^4.10.0"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.4.0"
+version_files = [
+    "pyproject.toml:version",
+    "src/dyag/__init__.py:__version__"
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_file = "CHANGELOG.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
