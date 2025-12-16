@@ -11,6 +11,10 @@ from typing import Any, Dict, List
 from dyag.commands.img2pdf import images_to_pdf
 from dyag.commands.compresspdf import compress_pdf
 from dyag.commands.md2html import process_markdown_to_html
+from dyag.commands.analyze_training import analyze_training_coverage
+from dyag.rag_query import RAGQuerySystem
+from dyag.commands.evaluate_rag import load_dataset, evaluate_rag
+from dyag.commands.index_rag import ChunkIndexer
 
 
 class MCPServer:
@@ -106,6 +110,131 @@ class MCPServer:
                         }
                     },
                     "required": ["markdown"]
+                }
+            },
+            "dyag_analyze_training": {
+                "description": "Analyze training data coverage for applications. Compares an applications file with training data to calculate which applications are covered and coverage statistics.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "applications": {
+                            "type": "string",
+                            "description": "Path to applications file (JSON or Markdown format)"
+                        },
+                        "training": {
+                            "type": "string",
+                            "description": "Path to training data file (JSONL format)"
+                        }
+                    },
+                    "required": ["applications", "training"]
+                }
+            },
+            "dyag_rag_query": {
+                "description": "Query the RAG (Retrieval Augmented Generation) system with a question. Searches relevant chunks from the indexed knowledge base and generates an answer using an LLM.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Question to ask the RAG system"
+                        },
+                        "n_chunks": {
+                            "type": "integer",
+                            "description": "Number of context chunks to retrieve (default: 5)",
+                            "default": 5,
+                            "minimum": 1,
+                            "maximum": 20
+                        },
+                        "collection": {
+                            "type": "string",
+                            "description": "ChromaDB collection name (default: applications)",
+                            "default": "applications"
+                        },
+                        "chroma_path": {
+                            "type": "string",
+                            "description": "Path to ChromaDB database (default: ./chroma_db)",
+                            "default": "./chroma_db"
+                        }
+                    },
+                    "required": ["question"]
+                }
+            },
+            "dyag_evaluate_rag": {
+                "description": "Evaluate the RAG system using a dataset of question/answer pairs. Tests accuracy, performance, and generates detailed evaluation report.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "dataset": {
+                            "type": "string",
+                            "description": "Path to JSONL dataset file with question/answer pairs"
+                        },
+                        "n_chunks": {
+                            "type": "integer",
+                            "description": "Number of context chunks per question (default: 5)",
+                            "default": 5,
+                            "minimum": 1,
+                            "maximum": 20
+                        },
+                        "max_questions": {
+                            "type": "integer",
+                            "description": "Max number of questions to test (default: all)",
+                            "minimum": 1
+                        },
+                        "output": {
+                            "type": "string",
+                            "description": "Output JSON file for detailed results"
+                        },
+                        "collection": {
+                            "type": "string",
+                            "description": "ChromaDB collection name (default: applications)",
+                            "default": "applications"
+                        },
+                        "chroma_path": {
+                            "type": "string",
+                            "description": "Path to ChromaDB database (default: ./chroma_db)",
+                            "default": "./chroma_db"
+                        }
+                    },
+                    "required": ["dataset"]
+                }
+            },
+            "dyag_index_rag": {
+                "description": "Index chunks into ChromaDB for RAG (Retrieval Augmented Generation). Creates a vector database from JSON/JSONL chunk files for semantic search.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "input": {
+                            "type": "string",
+                            "description": "Path to JSONL or JSON file containing chunks to index"
+                        },
+                        "collection": {
+                            "type": "string",
+                            "description": "ChromaDB collection name (default: applications)",
+                            "default": "applications"
+                        },
+                        "chroma_path": {
+                            "type": "string",
+                            "description": "Path to ChromaDB database (default: ./chroma_db)",
+                            "default": "./chroma_db"
+                        },
+                        "embedding_model": {
+                            "type": "string",
+                            "description": "Sentence transformer model for embeddings (default: all-MiniLM-L6-v2)",
+                            "default": "all-MiniLM-L6-v2"
+                        },
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "Batch size for indexing (default: 100)",
+                            "default": 100,
+                            "minimum": 1
+                        },
+                        "reset": {
+                            "type": "boolean",
+                            "description": "Reset collection before indexing (deletes existing data)",
+                            "default": false
+                        }
+                    },
+                    "required": ["input"]
                 }
             }
         }
@@ -219,6 +348,244 @@ class MCPServer:
                             {
                                 "type": "text",
                                 "text": "Failed to convert Markdown to HTML"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_analyze_training":
+                # Capture stdout to return as MCP response
+                import io
+                from contextlib import redirect_stdout, redirect_stderr
+
+                stdout_buffer = io.StringIO()
+                stderr_buffer = io.StringIO()
+
+                with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+                    result_code = analyze_training_coverage(
+                        app_file=arguments["applications"],
+                        training_file=arguments["training"]
+                    )
+
+                output = stdout_buffer.getvalue()
+                errors = stderr_buffer.getvalue()
+
+                if result_code == 0:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Training coverage analysis completed successfully.\n\n{output}"
+                            }
+                        ]
+                    }
+                else:
+                    error_text = errors if errors else "Failed to analyze training coverage"
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Analysis failed:\n{error_text}\n\nOutput:\n{output}"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_rag_query":
+                try:
+                    # Initialize RAG system
+                    rag = RAGQuerySystem(
+                        chroma_path=arguments.get("chroma_path", "./chroma_db"),
+                        collection_name=arguments.get("collection", "applications")
+                    )
+
+                    # Query RAG
+                    result = rag.ask(
+                        question=arguments["question"],
+                        n_chunks=arguments.get("n_chunks", 5)
+                    )
+
+                    # Format response
+                    response_text = f"**Question:** {arguments['question']}\n\n"
+                    response_text += f"**Réponse:**\n{result['answer']}\n\n"
+                    response_text += f"**Sources:** {len(result['sources'])} chunks\n"
+                    response_text += f"**Tokens:** {result.get('tokens_used', 0)}\n"
+                    response_text += f"**Chunk IDs:** {', '.join(result['sources'][:5])}"
+                    if len(result['sources']) > 5:
+                        response_text += f"... (+{len(result['sources'])-5} more)"
+
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": response_text
+                            }
+                        ]
+                    }
+                except Exception as e:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Error querying RAG: {str(e)}"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_evaluate_rag":
+                try:
+                    # Load dataset
+                    questions = load_dataset(arguments["dataset"])
+                    if not questions:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "No questions found in dataset"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    # Initialize RAG
+                    rag = RAGQuerySystem(
+                        chroma_path=arguments.get("chroma_path", "./chroma_db"),
+                        collection_name=arguments.get("collection", "applications")
+                    )
+
+                    # Evaluate
+                    stats = evaluate_rag(
+                        rag=rag,
+                        questions=questions,
+                        n_chunks=arguments.get("n_chunks", 5),
+                        max_questions=arguments.get("max_questions"),
+                        output_file=arguments.get("output")
+                    )
+
+                    # Format response
+                    response_text = "**RAG Evaluation Results**\n\n"
+                    response_text += f"Questions tested: {stats['total']}\n"
+                    response_text += f"✓ Success: {stats['successful']} ({stats['successful']/stats['total']*100:.1f}%)\n"
+                    response_text += f"✗ Failed: {stats['failed']} ({stats['failed']/stats['total']*100:.1f}%)\n\n"
+
+                    if stats['successful'] > 0:
+                        avg_time = stats['total_time'] / stats['successful']
+                        avg_tokens = stats['total_tokens'] / stats['successful']
+                        response_text += f"**Performance:**\n"
+                        response_text += f"Avg time: {avg_time:.1f}s\n"
+                        response_text += f"Avg tokens: {avg_tokens:.0f}\n\n"
+
+                    response_text += f"Total time: {stats['total_time']:.1f}s ({stats['total_time']/60:.1f} min)\n"
+                    response_text += f"Total tokens: {stats['total_tokens']}\n"
+
+                    if arguments.get("output"):
+                        response_text += f"\n✓ Detailed results saved to: {arguments['output']}"
+
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": response_text
+                            }
+                        ]
+                    }
+                except Exception as e:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Error evaluating RAG: {str(e)}"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_index_rag":
+                try:
+                    # Verify input file exists
+                    input_path = Path(arguments["input"])
+                    if not input_path.exists():
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"Input file not found: {arguments['input']}"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    # Create indexer
+                    indexer = ChunkIndexer(
+                        chroma_path=arguments.get("chroma_path", "./chroma_db"),
+                        collection_name=arguments.get("collection", "applications"),
+                        embedding_model=arguments.get("embedding_model", "all-MiniLM-L6-v2"),
+                        reset_collection=arguments.get("reset", False)
+                    )
+
+                    # Load chunks
+                    if input_path.suffix == '.jsonl':
+                        chunks = indexer.load_chunks_from_jsonl(input_path)
+                    elif input_path.suffix == '.json':
+                        chunks = indexer.load_chunks_from_json(input_path)
+                    else:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"Unsupported file format: {input_path.suffix}. Use .jsonl or .json"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    if not chunks:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "No chunks found in file"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    # Index chunks
+                    stats = indexer.index_chunks(
+                        chunks,
+                        batch_size=arguments.get("batch_size", 100),
+                        show_progress=False  # Disable progress bar for MCP
+                    )
+
+                    # Get collection stats
+                    collection_stats = indexer.get_stats()
+
+                    # Format response
+                    response_text = "**RAG Indexing Complete**\n\n"
+                    response_text += f"File: {input_path.name}\n"
+                    response_text += f"Collection: {arguments.get('collection', 'applications')}\n"
+                    response_text += f"Embedding model: {arguments.get('embedding_model', 'all-MiniLM-L6-v2')}\n\n"
+                    response_text += f"**Results:**\n"
+                    response_text += f"✓ Indexed: {stats['indexed']} chunks\n"
+                    response_text += f"✗ Errors: {stats['errors']}\n"
+                    response_text += f"Success rate: {stats['success_rate']:.1f}%\n\n"
+                    response_text += f"Total chunks in collection: {collection_stats['total_chunks']}"
+
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": response_text
+                            }
+                        ]
+                    }
+                except Exception as e:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Error indexing RAG: {str(e)}"
                             }
                         ],
                         "isError": True

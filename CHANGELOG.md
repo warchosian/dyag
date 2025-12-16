@@ -56,3 +56,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [0.4.0]: https://github.com/yourusername/dyag/releases/tag/v0.4.0
 [0.2.0-rc.1]: https://github.com/yourusername/dyag/releases/tag/v0.2.0-rc.1
+
+## v0.5.0 (2025-12-16)
+
+### Feat
+
+- migrate to Python 3.10 and add RAG optional dependencies
+
+## v0.4.0 (2025-12-07)
+
+### Feat
+
+- commit initial du projet DYAG v0.4.0

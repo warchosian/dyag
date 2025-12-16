@@ -174,7 +174,6 @@ git tag -l
 git ls-tree -r HEAD --name-only
 
 # Voir le diff depuis le début
-git diff d3ee2b7..HEAD
 ```
 
 ---

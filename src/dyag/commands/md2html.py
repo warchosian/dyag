@@ -289,6 +289,8 @@ def process_markdown_to_html(
                 # Replace only the first occurrence to avoid replacing identical blocks multiple times
                 pattern = f'```{block_type}\n{re.escape(code)}\n```'
                 replacement = f'<div class="diagram diagram-{block_type}">\n{svg_content}\n</div>'
+                # Escape backslashes in replacement to avoid regex interpretation
+                replacement = replacement.replace('\\', '\\\\')
                 result_content = re.sub(pattern, replacement, result_content, count=1)
                 svg_count += 1
                 if verbose:

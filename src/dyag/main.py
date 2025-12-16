@@ -13,11 +13,21 @@ from dyag.commands import (
     register_md2html_command,
     register_html2md_command,
     register_concat_html_command,
-    register_add_toc_command,
+    register_add_toc4md_command,
+    register_add_toc4html_command,
     register_html2pdf_command,
     register_project2md_command,
     register_make_interactive_command,
-    register_flatten_wikisi_command
+    register_flatten_wikisi_command,
+    register_flatten_md_command,
+    register_flatten_html_command,
+    register_merge_md_command,
+    register_merge_html_command,
+    register_analyze_training_command,
+    register_prepare_rag_command,
+    register_evaluate_rag_command,
+    register_index_rag_command,
+    register_query_rag_command
 )
 
 
@@ -49,11 +59,21 @@ def create_parser():
     register_md2html_command(subparsers)
     register_html2md_command(subparsers)
     register_concat_html_command(subparsers)
-    register_add_toc_command(subparsers)
+    register_add_toc4md_command(subparsers)
+    register_add_toc4html_command(subparsers)
     register_html2pdf_command(subparsers)
     register_project2md_command(subparsers)
     register_make_interactive_command(subparsers)
     register_flatten_wikisi_command(subparsers)
+    register_flatten_md_command(subparsers)
+    register_flatten_html_command(subparsers)
+    register_merge_md_command(subparsers)
+    register_merge_html_command(subparsers)
+    register_analyze_training_command(subparsers)
+    register_prepare_rag_command(subparsers)
+    register_evaluate_rag_command(subparsers)
+    register_index_rag_command(subparsers)
+    register_query_rag_command(subparsers)
 
     return parser
 
