@@ -1,0 +1,34 @@
+# Requirements pour le système RAG Q&A
+# Installer avec: pip install -r requirements-rag.txt
+
+# === Base vectorielle ===
+chromadb==0.4.22
+
+# === Embeddings ===
+sentence-transformers==2.3.1
+
+# === LLM ===
+openai>=1.20
+anthropic>=0.34.0  # Support de Claude/Anthropic
+
+# === Framework RAG ===
+langchain==0.1.9
+langchain-openai==0.0.6
+langchain-community==0.0.24
+
+# === Utilitaires ===
+tiktoken==0.6.0
+pydantic==2.6.1
+python-dotenv==1.0.1
+loguru==0.7.2
+
+# === Interface web (optionnel) ===
+streamlit==1.31.1
+
+# === Monitoring (optionnel) ===
+# langsmith==0.0.87
+
+# === Déjà dans votre projet (vérifiez pyproject.toml) ===
+# click
+# rich
+# pathlib
