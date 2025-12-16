@@ -57,6 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.4.0]: https://github.com/yourusername/dyag/releases/tag/v0.4.0
 [0.2.0-rc.1]: https://github.com/yourusername/dyag/releases/tag/v0.2.0-rc.1
 
+## v0.6.0 (2025-12-16)
+
+### Feat
+
+- add RAG (Retrieval-Augmented Generation) system
+
 ## v0.5.0 (2025-12-16)
 
 ### Feat

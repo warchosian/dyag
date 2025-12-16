@@ -2,7 +2,7 @@
 dyag - Markdown to HTML converter with diagram support
 """
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 __author__ = "Your Name"
 __email__ = "your.email@example.com"
 
