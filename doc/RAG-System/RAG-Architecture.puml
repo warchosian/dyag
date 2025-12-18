@@ -1,0 +1,255 @@
+@startuml Architecture du Système RAG Complet
+
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!include ICONURL/common.puml
+!include ICONURL/font-awesome-5/file_code.puml
+!include ICONURL/font-awesome-5/database.puml
+!include ICONURL/font-awesome-5/brain.puml
+!include ICONURL/font-awesome-5/robot.puml
+
+skinparam {
+    BackgroundColor white
+    ComponentStyle rectangle
+    shadowing false
+    ArrowColor #2C3E50
+    ArrowThickness 2
+}
+
+title Architecture RAG DYAG - Pipeline Complet
+
+' ============================================================
+' PHASE 1: CRÉATION DE CHUNKS
+' ============================================================
+
+package "PHASE 1: Création de Chunks" #E8F5E9 {
+
+    file "applications.json\n(3.96 MB)" as json1 #FFF9C4
+    file "applications.md\n(3.14 MB)" as md1 #FFF9C4
+
+    component "create_rag.py" as creator #81C784 {
+        component "DataCleaner" as cleaner #A5D6A7 {
+            [clean_text()]
+            [restore_url()]
+        }
+
+        component "ApplicationChunker" as chunker #A5D6A7 {
+            [chunk_from_json()]
+            [chunk_from_markdown()]
+        }
+
+        component "RAGExporter" as exporter #A5D6A7 {
+            [export_jsonl()]
+            [export_json()]
+            [export_markdown()]
+        }
+    }
+
+    file "applications_rag.jsonl\n(1.75 MB - 1628 chunks)" as jsonl1 #C8E6C9
+    file "applications_rag.json\n(1.84 MB)" as json2 #C8E6C9
+    file "applications_rag.md\n(1.71 MB)" as md2 #C8E6C9
+}
+
+json1 --> cleaner : "Données brutes"
+md1 --> cleaner : "Markdown structuré"
+
+cleaner --> chunker : "Données nettoyées"
+
+chunker --> exporter : "Chunks sémantiques\n(main, overview,\ndescription, technical,\nsites, details)"
+
+exporter --> jsonl1 : "Format recommandé\npour ChromaDB"
+exporter --> json2 : "Format analyse"
+exporter --> md2 : "Format documentation"
+
+note right of creator
+  **Chunking Sémantique**
+  • Taille adaptive (8-6606 chars)
+  • Préserve le sens
+  • 6 types de chunks
+  • Métadonnées enrichies
+end note
+
+' ============================================================
+' PHASE 2: INDEXATION
+' ============================================================
+
+package "PHASE 2: Indexation Vectorielle" #E3F2FD {
+
+    component "index_chunks.py" as indexer #42A5F5 {
+        component "ChunkIndexer" as idx #64B5F6 {
+            [load_chunks_from_jsonl()]
+            [index_chunks()]
+            [get_stats()]
+        }
+    }
+
+    component "Sentence Transformers\n(Local, Gratuit)" as st #90CAF9 {
+        [all-MiniLM-L6-v2]
+        [encode(text)]
+        [dimension: 384]
+    }
+
+    database "ChromaDB\n./chroma_db/" as chroma #1976D2 {
+        [Collection: applications]
+        [1628 documents]
+        [1628 embeddings]
+        [1628 metadatas]
+        [~50 MB]
+    }
+}
+
+jsonl1 --> idx : "Chargement\npar lots (100)"
+
+idx --> st : "Texte des chunks"
+st --> idx : "Vecteurs [384]"
+
+idx --> chroma : "Indexation\n(id, document,\nembedding, metadata)"
+
+note right of st
+  **Embeddings Gratuits**
+  • Modèle local (pas d'API)
+  • Taille: ~90 MB
+  • Temps: ~2 min pour 1628 chunks
+  • Dimension: 384
+end note
+
+' ============================================================
+' PHASE 3: QUESTIONS & RÉPONSES
+' ============================================================
+
+package "PHASE 3: Questions & Réponses" #FCE4EC {
+
+    actor "Utilisateur" as user #F06292
+
+    component "rag_query.py" as rag #EC407A {
+        component "RAGQuerySystem" as rqs #F48FB1 {
+            [search_chunks()]
+            [generate_answer()]
+            [ask()]
+            [get_stats()]
+        }
+    }
+
+    component "Sentence Transformers\n(même modèle)" as st2 #F8BBD0 {
+        [encode(question)]
+    }
+
+    component "OpenAI API\n(Payant)" as openai #AD1457 {
+        [GPT-4o-mini]
+        [Temperature: 0.3]
+        [Max tokens: 1000]
+        [~$0.01/question]
+    }
+}
+
+user --> rqs : "Question en\nlangage naturel"
+
+rqs --> st2 : "Question"
+st2 --> rqs : "Query embedding [384]"
+
+rqs --> chroma : "query(\n  embedding,\n  n_results=5\n)"
+
+chroma --> rqs : "Top 5 chunks\nsimilaires\n(distance < 0.5)"
+
+rqs --> openai : "System prompt +\nContexte (5 chunks) +\nQuestion"
+
+openai --> rqs : "Réponse générée +\nTokens utilisés"
+
+rqs --> user : "answer + sources +\nmetadata + chunks_used"
+
+note right of rqs
+  **Pipeline RAG**
+  1. Embedding de la question
+  2. Recherche vectorielle (Top K)
+  3. Construction du contexte
+  4. Génération avec LLM
+  5. Réponse + citations
+end note
+
+note left of openai
+  **Alternatives:**
+  • GPT-4o (plus précis, $0.03)
+  • Claude 3.5 Sonnet ($0.015)
+  • LLaMA 3.1 8B (gratuit, local)
+end note
+
+' ============================================================
+' COMPOSANTS OPTIONNELS
+' ============================================================
+
+package "Composants Optionnels" #FFF3E0 {
+
+    component "Interface Web\nStreamlit" as streamlit #FFB74D {
+        [UI interactive]
+        [Cache résultats]
+        [Visualisation sources]
+    }
+
+    database "PostgreSQL\n(Requêtes exhaustives)" as pg #FF9800 {
+        [Applications]
+        [Technologies]
+        [Hébergeurs]
+        [Gestionnaires]
+    }
+
+    database "Redis\n(Cache)" as redis #FF6F00 {
+        [Questions fréquentes]
+        [TTL: 1 heure]
+        [Économie tokens]
+    }
+}
+
+user ..> streamlit : "Alternative CLI"
+streamlit ..> rqs : "Utilise"
+
+rqs ..> redis : "Cache réponses"
+rqs ..> pg : "Requêtes SQL\nexhaustives"
+
+note bottom of streamlit
+  **Interface Web Optionnelle**
+  • Mode conversationnel
+  • Affichage sources
+  • Filtres interactifs
+  • Export résultats
+end note
+
+' ============================================================
+' FLUX DE DONNÉES
+' ============================================================
+
+note as N1
+  **Exemple de Question:**
+  "Qui héberge GIDAF ?"
+
+  **Flux:**
+  1. Embedding: [0.123, -0.456, ..., 0.789]
+  2. Recherche: Top 5 chunks similaires
+  3. Contexte: "[Chunk 1]\nGIDAF est hébergé par le BRGM..."
+  4. LLM: "GIDAF est hébergé par le BRGM (Bureau de
+     Recherches Géologiques et Minières). Source: [chunk_id]"
+
+  **Métadonnées:**
+  • Sources: 5 chunks
+  • Tokens: 342 (prompt: 280, completion: 62)
+  • Temps: ~3 secondes
+  • Coût: ~$0.008
+end note
+
+' Légende
+legend bottom
+  **Légende:**
+  Phase 1 (Vert) = Création de chunks (gratuit, local, ~5 sec)
+  Phase 2 (Bleu) = Indexation (gratuit, local, ~2 min une fois)
+  Phase 3 (Rose) = Q&A (payant OpenAI, ~$0.01/question)
+
+  **Fichiers Principaux:**
+  • src/dyag/commands/create_rag.py (600+ lignes)
+  • scripts/index_chunks.py (300+ lignes)
+  • src/dyag/rag_query.py (289 lignes)
+
+  **Documentation:**
+  • doc/rag-quick-start.md (démarrage 5 min)
+  • doc/rag-modules-guide.md (guide complet)
+  • doc/rag-chunks-algo.md (algorithme détaillé)
+end legend
+
+@enduml
