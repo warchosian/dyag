@@ -1148,23 +1148,541 @@ dyag import-rag rag_backup.zip --collection applications_restored
 
 ## 📋 Tableau récapitulatif - Modules à développer
 
-| Module | Priorité | Complexité | Impact | MCP |
-|--------|----------|------------|--------|-----|
-| `fix-chunk-ids` | ✨ P0 | Faible | Élimine étape manuelle | ✅ |
-| `markdown-to-rag` | ✨ P0 | Moyenne | Pipeline complet 1 commande | ✅ |
-| `test-rag` | ✨ P0 | Faible | Résout problème Unicode | ✅ |
-| `create-eval-dataset` | ⭐ P1 | Élevée | Automatise évaluation | ✅ |
-| `rag-stats` | ⭐ P1 | Faible | Visibilité système | ✅ |
-| `validate-chunks` | 📋 P2 | Moyenne | Qualité proactive | ✅ |
-| `compare-rag` | 📊 P2 | Élevée | Optimisation guidée | ✅ |
-| `export-rag` | 💾 P2 | Moyenne | Portabilité | ✅ |
+### Vue d'ensemble
 
-**Légende priorités** :
-- ✨ P0 : Bloquant ou grande douleur utilisateur
-- ⭐ P1 : Important pour workflow complet
-- 📋 P2 : Amélioration qualité
-- 📊 P2 : Fonctionnalité avancée
-- 💾 P2 : Utilitaire
+| # | Module | Priorité | Status | Complexité | Effort | MCP | Dépendances |
+|---|--------|----------|--------|------------|--------|-----|-------------|
+| 1 | `fix-chunk-ids` | ~~✨ P0~~ | ✅ **FAIT v0.7** | Faible | - | ✅ | - |
+| 2 | `markdown-to-rag` | ✨ P0 | 🔨 En cours | Moyenne | 2j | ✅ | prepare-rag, index-rag |
+| 3 | `test-rag` | ✨ P0 | 📋 À faire | Faible | 1j | ✅ | query-rag |
+| 4 | `validate-chunks` | ~~📋 P2~~ | ✅ **FAIT v0.7** | Moyenne | - | ✅ | - |
+| 5 | `create-eval-dataset` | ⭐ P1 | 📋 À faire | Élevée | 3j | ✅ | query-rag, LLM |
+| 6 | `rag-stats` | ⭐ P1 | 📋 À faire | Faible | 1j | ✅ | ChromaDB |
+| 7 | `compare-rag` | 📊 P2 | 📋 À faire | Élevée | 4j | ✅ | evaluate-rag |
+| 8 | `export-rag` / `import-rag` | 💾 P2 | 📋 À faire | Moyenne | 2j | ✅ | ChromaDB |
+
+**Légende Status** :
+- ✅ **FAIT** : Implémenté et testé
+- 🔨 **En cours** : Partiellement implémenté
+- 📋 **À faire** : Non démarré
+- ⏸️ **Bloqué** : Attend une dépendance
+
+**Légende Priorités** :
+- ✨ P0 : Bloquant ou grande douleur utilisateur (urgence élevée)
+- ⭐ P1 : Important pour workflow complet (nécessaire)
+- 📋 P2 : Amélioration qualité (confort)
+- 📊 P2 : Fonctionnalité avancée (optimisation)
+- 💾 P2 : Utilitaire (portabilité)
+
+---
+
+### Détails des Modules
+
+#### 1. ✅ `fix-chunk-ids` - IMPLÉMENTÉ v0.7.0
+
+**Status** : ✅ Terminé et intégré dans `prepare-rag`
+
+**Problème résolu** : ChromaDB exige des IDs en format string, mais prepare-rag générait des IDs numériques.
+
+**Solution** : Correction permanente dans le code source
+- Fonction `chunk_by_size()` : IDs → `f'chunk_{id}'`
+- Fonction `extract_sections()` : IDs string automatiques
+- Fonction `extract_markdown_sections()` : IDs string automatiques
+
+**Impact** : Plus besoin de script manuel de conversion!
+
+**Fichiers modifiés** : `src/dyag/commands/prepare_rag.py` (lignes 510, 530, 310, 327, 372, 390)
+
+---
+
+#### 2. 🔨 `markdown-to-rag` - Pipeline Complet
+
+**Status** : 🔨 Partiellement implémenté (via prepare-rag + index-rag)
+
+**Objectif** : Commande unique pour aller du Markdown à un RAG indexé
+
+**Commande proposée** :
+```bash
+dyag markdown-to-rag input.md \
+  --collection my_collection \
+  --chunk-mode markdown-headers \
+  --chunk-size 1000 \
+  --reset \
+  --check
+```
+
+**Workflow interne** :
+1. Appelle `prepare-rag` avec les paramètres de chunking
+2. Valide automatiquement avec `--check`
+3. Appelle `index-rag` pour indexation ChromaDB
+4. Affiche statistiques finales
+
+**Avantages** :
+- ✅ 1 commande au lieu de 3
+- ✅ Pipeline automatique
+- ✅ Gestion d'erreurs centralisée
+- ✅ Logs unifiés
+
+**Arguments** :
+```python
+parser.add_argument('input', help='Fichier Markdown source')
+parser.add_argument('--collection', required=True, help='Nom de la collection')
+parser.add_argument('--chunk-mode', choices=['markdown-headers', 'section', 'size'], default='markdown-headers')
+parser.add_argument('--chunk-size', type=int, default=1000)
+parser.add_argument('--chunk-overlap', type=int, default=200)
+parser.add_argument('--embedding-model', default='all-MiniLM-L6-v2')
+parser.add_argument('--reset', action='store_true', help='Recréer la collection')
+parser.add_argument('--check', action='store_true', default=True, help='Valider les chunks')
+parser.add_argument('--keep-intermediate', action='store_true', help='Garder fichiers intermédiaires')
+```
+
+**Exemple d'output** :
+```
+[1/3] Préparation et chunking...
+  ✓ 1008 sections extraites (markdown-headers)
+  ✓ Validation: 0 erreurs
+
+[2/3] Génération des embeddings...
+  ✓ Modèle chargé: all-MiniLM-L6-v2 (384 dim)
+  ✓ Progress: 100% (1008/1008)
+
+[3/3] Indexation ChromaDB...
+  ✓ Collection 'my_collection' créée
+  ✓ 1008 chunks indexés (100%)
+
+Pipeline terminé en 2m 15s
+Vous pouvez maintenant interroger: dyag query-rag --collection my_collection
+```
+
+**Effort** : 2 jours (intégration + tests + MCP)
+
+**MCP** : `dyag_markdown_to_rag`
+
+---
+
+#### 3. 📋 `test-rag` - Test Rapide sans Unicode
+
+**Status** : 📋 À faire
+
+**Objectif** : Tester rapidement le RAG sans les problèmes d'encodage Unicode
+
+**Commande proposée** :
+```bash
+dyag test-rag \
+  --collection my_collection \
+  --question "Qu'est-ce que 6Tzen ?" \
+  --n-chunks 5 \
+  --no-emoji \
+  --format json
+```
+
+**Fonctionnalités** :
+- ✅ Mode `--no-emoji` pour éviter erreurs cp1252 sur Windows
+- ✅ Output en JSON ou texte simple
+- ✅ Temps de réponse affiché
+- ✅ Sources affichées proprement
+- ✅ Mode interactif (sans argument `--question`)
+
+**Arguments** :
+```python
+parser.add_argument('--collection', required=True)
+parser.add_argument('--question', help='Question à poser (si absent: mode interactif)')
+parser.add_argument('--n-chunks', type=int, default=5)
+parser.add_argument('--no-emoji', action='store_true', help='Désactive emojis (Windows)')
+parser.add_argument('--format', choices=['text', 'json'], default='text')
+parser.add_argument('--show-chunks', action='store_true', help='Affiche le contenu des chunks')
+```
+
+**Exemple d'output (mode text)** :
+```
+[Question] Qu'est-ce que 6Tzen ?
+
+[Recherche] 5 chunks pertinents trouvés (0.3s)
+
+[Réponse] (2.1s, 234 tokens)
+6Tzen est une application de dématérialisation et de transmission
+de documents pour le transport routier. Elle est en production et
+gérée par SG/DNUM/MOE.
+
+[Sources]
+- chunk_0 (score: 0.85)
+- chunk_142 (score: 0.78)
+- chunk_567 (score: 0.71)
+```
+
+**Exemple d'output (mode json)** :
+```json
+{
+  "question": "Qu'est-ce que 6Tzen ?",
+  "answer": "6Tzen est une application...",
+  "sources": [
+    {"id": "chunk_0", "score": 0.85},
+    {"id": "chunk_142", "score": 0.78}
+  ],
+  "time": 2.1,
+  "tokens": 234
+}
+```
+
+**Effort** : 1 jour (wrapper + mode interactif + MCP)
+
+**MCP** : `dyag_test_rag`
+
+---
+
+#### 4. ✅ `validate-chunks` - IMPLÉMENTÉ v0.7.0
+
+**Status** : ✅ Terminé et intégré dans `prepare-rag --check`
+
+**Fonctionnalité** : Validation automatique de la structure des chunks
+
+**Checks effectués** :
+- ✅ Structure JSON valide (metadata, chunks)
+- ✅ Champs requis présents (id, title, source, content)
+- ✅ Type des IDs (rejette `int`, accepte uniquement `str`)
+- ✅ Contenu non vide
+- ✅ Taille raisonnable (< 50000 caractères)
+
+**Utilisation** :
+```bash
+dyag prepare-rag file.md --chunk markdown-headers --extract-json --check
+```
+
+**Fichier** : `src/dyag/commands/prepare_rag.py:394` (fonction `validate_chunks()`)
+
+---
+
+#### 5. 📋 `create-eval-dataset` - Génération Automatique
+
+**Status** : 📋 À faire
+
+**Objectif** : Générer automatiquement un dataset d'évaluation à partir de la collection RAG
+
+**Commande proposée** :
+```bash
+dyag create-eval-dataset \
+  --collection my_collection \
+  --output evaluation/dataset.jsonl \
+  --num-questions 50 \
+  --strategy diverse \
+  --llm openai/gpt-4
+```
+
+**Stratégies de génération** :
+1. **diverse** : Questions variées couvrant tous les chunks
+2. **random** : Sélection aléatoire de chunks
+3. **important** : Focus sur chunks les plus référencés
+4. **manual** : Template avec placeholders à remplir
+
+**Workflow interne** :
+1. Échantillonne N chunks de la collection
+2. Pour chaque chunk, génère une question avec le LLM
+3. Utilise le chunk comme contexte pour générer la réponse attendue
+4. Sauvegarde au format JSONL
+
+**Arguments** :
+```python
+parser.add_argument('--collection', required=True)
+parser.add_argument('--output', required=True)
+parser.add_argument('--num-questions', type=int, default=50)
+parser.add_argument('--strategy', choices=['diverse', 'random', 'important', 'manual'], default='diverse')
+parser.add_argument('--llm', help='Modèle LLM pour génération (défaut: celui du .env)')
+parser.add_argument('--question-types', nargs='+', choices=['factual', 'analytical', 'comparison'], default=['factual'])
+parser.add_argument('--temperature', type=float, default=0.7)
+```
+
+**Exemple d'output** :
+```
+[1/50] Génération à partir de chunk_0 (Application: 6Tzen)
+  Question: Qu'est-ce que l'application 6Tzen ?
+  Réponse: 6Tzen est une application de dématérialisation...
+
+[2/50] Génération à partir de chunk_15 (Application: SINP)
+  Question: Quel est le statut de SINP ?
+  Réponse: SINP est en phase de construction...
+
+...
+
+[50/50] Génération terminée
+✓ 50 questions générées
+✓ Sauvegardées dans evaluation/dataset.jsonl
+✓ Temps total: 3m 45s
+✓ Tokens utilisés: 12,450
+```
+
+**Format de sortie** (JSONL) :
+```json
+{"messages": [
+  {"role": "system", "content": "Tu es un assistant..."},
+  {"role": "user", "content": "Qu'est-ce que 6Tzen ?"},
+  {"role": "assistant", "content": "6Tzen est..."}
+], "metadata": {"chunk_id": "chunk_0", "strategy": "diverse"}}
+```
+
+**Effort** : 3 jours (génération LLM + stratégies + validation + MCP)
+
+**MCP** : `dyag_create_eval_dataset`
+
+---
+
+#### 6. 📋 `rag-stats` - Statistiques et Monitoring
+
+**Status** : 📋 À faire
+
+**Objectif** : Afficher des statistiques détaillées sur une collection RAG
+
+**Commande proposée** :
+```bash
+dyag rag-stats \
+  --collection my_collection \
+  --format table \
+  --export stats.json
+```
+
+**Statistiques affichées** :
+- ✅ Nombre total de chunks
+- ✅ Distribution tailles (min, max, moyenne, médiane)
+- ✅ Distribution types de chunks
+- ✅ Modèle d'embedding utilisé (dimension)
+- ✅ Espace disque utilisé
+- ✅ Date de création/mise à jour
+- ✅ Top 10 mots-clés les plus fréquents
+- ✅ Statistiques des métadonnées
+
+**Arguments** :
+```python
+parser.add_argument('--collection', required=True)
+parser.add_argument('--format', choices=['table', 'json', 'markdown'], default='table')
+parser.add_argument('--export', help='Exporter en JSON')
+parser.add_argument('--detailed', action='store_true', help='Statistiques détaillées')
+```
+
+**Exemple d'output (format table)** :
+```
+======================================================================
+STATISTIQUES COLLECTION: my_collection
+======================================================================
+
+Informations générales:
+  Total chunks:          1008
+  Modèle embedding:      all-MiniLM-L6-v2 (384 dimensions)
+  Créée le:              2024-12-18 14:30:00
+  Dernière MAJ:          2024-12-18 16:45:00
+  Espace disque:         145.2 MB
+
+Distribution des tailles:
+  Minimum:               234 caractères
+  Maximum:               8,456 caractères
+  Moyenne:               3,124 caractères
+  Médiane:               2,890 caractères
+
+Distribution par type:
+  Application:           1008 (100%)
+
+Top 10 mots-clés:
+  1. application (1008 occurrences)
+  2. production (856 occurrences)
+  3. développement (745 occurrences)
+  4. ministère (623 occurrences)
+  5. DNUM (589 occurrences)
+  ...
+
+Métadonnées disponibles:
+  - id (1008/1008)
+  - title (1008/1008)
+  - source (1008/1008)
+  - content (1008/1008)
+
+======================================================================
+```
+
+**Exemple d'output (format json)** :
+```json
+{
+  "collection": "my_collection",
+  "timestamp": "2024-12-18T16:45:00",
+  "total_chunks": 1008,
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_dimension": 384,
+  "disk_size_mb": 145.2,
+  "size_stats": {
+    "min": 234,
+    "max": 8456,
+    "mean": 3124,
+    "median": 2890
+  },
+  "type_distribution": {
+    "Application": 1008
+  },
+  "top_keywords": [
+    {"word": "application", "count": 1008},
+    {"word": "production", "count": 856}
+  ]
+}
+```
+
+**Effort** : 1 jour (statistiques + export + MCP)
+
+**MCP** : `dyag_rag_stats`
+
+---
+
+#### 7. 📊 `compare-rag` - Comparaison de Configurations
+
+**Status** : 📋 À faire
+
+**Objectif** : Comparer différentes configurations RAG pour optimiser les performances
+
+**Commande proposée** :
+```bash
+dyag compare-rag \
+  --dataset evaluation/test.jsonl \
+  --collections app_v1,app_v2,app_v3 \
+  --metrics accuracy,time,cost \
+  --output comparison.html
+```
+
+**Comparaisons possibles** :
+1. **Collections différentes** : Comparer plusieurs indexations
+2. **N-chunks différents** : Tester 3, 5, 10, 20 chunks
+3. **Modèles d'embedding** : MiniLM vs MPNet vs OpenAI
+4. **Chunk sizes** : 500, 1000, 2000, 5000 chars
+5. **Modèles LLM** : GPT-3.5 vs GPT-4 vs Claude vs Mistral
+
+**Arguments** :
+```python
+parser.add_argument('--dataset', required=True, help='Dataset JSONL d\'évaluation')
+parser.add_argument('--collections', help='Collections séparées par virgule')
+parser.add_argument('--n-chunks-range', help='Range de n-chunks (ex: 3,5,10)')
+parser.add_argument('--metrics', default='accuracy,time,cost')
+parser.add_argument('--output', help='Fichier HTML de résultats')
+parser.add_argument('--baseline', help='Collection de référence')
+```
+
+**Métriques calculées** :
+- **Accuracy** : % de réponses correctes
+- **Precision** : Pertinence des sources trouvées
+- **Recall** : Couverture des infos importantes
+- **Time** : Temps moyen de réponse
+- **Cost** : Coût tokens moyen
+- **F1-Score** : Harmonic mean de precision/recall
+
+**Exemple d'output (tableau)** :
+```
+======================================================================
+COMPARAISON RAG - 3 configurations
+======================================================================
+Dataset: evaluation/test.jsonl (50 questions)
+
+Configuration    | Accuracy | Precision | Recall | F1    | Time  | Cost   |
+-----------------|----------|-----------|--------|-------|-------|--------|
+app_chunks_500   | 78.0%    | 0.82      | 0.71   | 0.76  | 1.8s  | $0.15  |
+app_chunks_1000  | 85.0%    | 0.89      | 0.81   | 0.85  | 2.1s  | $0.18  | ⭐
+app_chunks_2000  | 83.0%    | 0.87      | 0.79   | 0.83  | 2.5s  | $0.22  |
+
+⭐ Configuration recommandée: app_chunks_1000
+  - Meilleur F1-Score (0.85)
+  - Bon équilibre performance/coût
+  - Temps de réponse acceptable
+
+Graphiques générés: comparison.html
+```
+
+**Output HTML** : Graphiques interactifs avec Chart.js ou Plotly
+
+**Effort** : 4 jours (évaluation multiple + métriques + visualisation + MCP)
+
+**MCP** : `dyag_compare_rag`
+
+---
+
+#### 8. 💾 `export-rag` / `import-rag` - Portabilité
+
+**Status** : 📋 À faire
+
+**Objectif** : Exporter/importer une collection RAG pour portabilité
+
+**Commandes proposées** :
+```bash
+# Export
+dyag export-rag \
+  --collection my_collection \
+  --output backup/my_rag.tar.gz \
+  --include-embeddings
+
+# Import
+dyag import-rag \
+  --input backup/my_rag.tar.gz \
+  --collection restored_collection \
+  --overwrite
+```
+
+**Format d'export** :
+- Fichier `.tar.gz` contenant:
+  - `metadata.json` : Info collection
+  - `chunks.jsonl` : Tous les chunks
+  - `embeddings.npy` : Vecteurs (optionnel)
+  - `config.json` : Configuration (modèle, dimension)
+
+**Arguments export** :
+```python
+parser.add_argument('--collection', required=True)
+parser.add_argument('--output', required=True)
+parser.add_argument('--include-embeddings', action='store_true', help='Inclure vecteurs')
+parser.add_argument('--compress', choices=['none', 'gzip', 'bz2'], default='gzip')
+```
+
+**Arguments import** :
+```python
+parser.add_argument('--input', required=True)
+parser.add_argument('--collection', required=True)
+parser.add_argument('--overwrite', action='store_true')
+parser.add_argument('--regenerate-embeddings', action='store_true', help='Recalculer vecteurs')
+```
+
+**Use cases** :
+- ✅ Backup avant modifications
+- ✅ Migration vers autre serveur
+- ✅ Partage de collections entre équipes
+- ✅ Version control des indexations
+
+**Effort** : 2 jours (sérialisation + compression + validation + MCP)
+
+**MCP** : `dyag_export_rag` / `dyag_import_rag`
+
+---
+
+### Roadmap de Développement
+
+#### Phase 1 : Fondations (Semaine 1-2) - ✅ **FAIT**
+- [x] ✅ `fix-chunk-ids` - Intégré v0.7.0
+- [x] ✅ `validate-chunks` - Intégré v0.7.0
+- [x] ✅ Unicode fixes - Intégré v0.7.0
+
+#### Phase 2 : Workflow Essentiel (Semaine 3-4)
+- [ ] 🔨 `markdown-to-rag` - Pipeline 1 commande
+- [ ] 📋 `test-rag` - Tests rapides
+- [ ] 📋 `rag-stats` - Monitoring
+
+#### Phase 3 : Évaluation Avancée (Semaine 5-7)
+- [ ] 📋 `create-eval-dataset` - Génération auto
+- [ ] 📋 `compare-rag` - Optimisation guidée
+
+#### Phase 4 : Utilitaires (Semaine 8-9)
+- [ ] 📋 `export-rag` / `import-rag` - Portabilité
+
+---
+
+### Métriques de Succès
+
+| Métrique | Avant v0.7.0 | Après Phase 2 | Objectif Phase 4 |
+|----------|--------------|---------------|------------------|
+| **Commandes pour RAG complet** | 7 manuelles | 3 automatiques | 1 pipeline |
+| **Temps setup** | 15 minutes | 5 minutes | 2 minutes |
+| **Étapes manuelles** | 3 (fix IDs, dataset, etc.) | 1 (dataset) | 0 |
+| **Taux d'erreur Unicode** | 100% (Windows) | 0% | 0% |
+| **Coverage tests** | 0% | 40% | 85% |
+| **Génération dataset** | Manuel (1h) | Semi-auto (20min) | Auto (2min) |
 
 ---
 
