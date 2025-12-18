@@ -56,7 +56,7 @@ def load_dataset(dataset_path: str) -> List[Dict]:
                 print(f"Erreur ligne {line_num}: {e}")
                 continue
 
-    print(f"✓ {len(questions)} questions chargées\n")
+    print(f"[OK] {len(questions)} questions chargées\n")
     return questions
 
 
@@ -113,13 +113,13 @@ def evaluate_rag(
             sources = result.get('sources', [])
 
             # Afficher réponse
-            print(f"\n✓ Réponse ({elapsed:.1f}s, {tokens} tokens):")
+            print(f"\n[OK] Réponse ({elapsed:.1f}s, {tokens} tokens):")
             print(answer[:300] + "..." if len(answer) > 300 else answer)
 
-            print(f"\n📌 Attendu:")
+            print(f"\n[Expected]:")
             print(expected[:300] + "..." if len(expected) > 300 else expected)
 
-            print(f"\n📊 Sources: {', '.join(sources[:3])}...")
+            print(f"\n[Sources]: {', '.join(sources[:3])}...")
 
             # Enregistrer résultat
             results.append({
@@ -137,7 +137,7 @@ def evaluate_rag(
             total_tokens += tokens
 
         except Exception as e:
-            print(f"\n❌ Erreur: {e}")
+            print(f"\n[ERROR] Erreur: {e}")
             results.append({
                 'question': question,
                 'answer': None,
@@ -158,8 +158,8 @@ def evaluate_rag(
     failed = len(results) - successful
 
     print(f"\nQuestions traitées: {len(results)}")
-    print(f"  ✓ Succès: {successful} ({successful/len(results)*100:.1f}%)")
-    print(f"  ✗ Échecs: {failed} ({failed/len(results)*100:.1f}%)")
+    print(f"  [OK] Succès: {successful} ({successful/len(results)*100:.1f}%)")
+    print(f"  [ERR] Échecs: {failed} ({failed/len(results)*100:.1f}%)")
 
     if successful > 0:
         avg_time = total_time / successful
@@ -191,7 +191,7 @@ def evaluate_rag(
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
 
-        print(f"\n✓ Résultats sauvegardés: {output_file}")
+        print(f"\n[OK] Résultats sauvegardés: {output_file}")
 
     print("=" * 80)
 
@@ -210,13 +210,13 @@ def execute(args):
     # Vérifier dataset
     dataset_path = Path(args.dataset)
     if not dataset_path.exists():
-        print(f"❌ Dataset introuvable: {args.dataset}")
+        print(f"[ERROR] Dataset introuvable: {args.dataset}")
         return 1
 
     # Charger questions
     questions = load_dataset(args.dataset)
     if not questions:
-        print("❌ Aucune question trouvée dans le dataset")
+        print("[ERROR] Aucune question trouvée dans le dataset")
         return 1
 
     # Initialiser RAG
@@ -228,7 +228,7 @@ def execute(args):
             timeout=args.timeout
         )
     except Exception as e:
-        print(f"❌ Erreur d'initialisation du RAG: {e}")
+        print(f"[ERROR] Erreur d'initialisation du RAG: {e}")
         return 1
 
     # Évaluer

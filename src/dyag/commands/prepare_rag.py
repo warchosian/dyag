@@ -288,7 +288,7 @@ def extract_sections(content: str, verbose: bool = False) -> List[Dict[str, str]
         verbose: Print progress
 
     Returns:
-        List of section dictionaries with 'title', 'source', 'content'
+        List of section dictionaries with 'id', 'title', 'source', 'content'
     """
     sections = []
 
@@ -298,6 +298,7 @@ def extract_sections(content: str, verbose: bool = False) -> List[Dict[str, str]
     lines = content.split('\n')
     current_section = None
     current_lines = []
+    section_id = 0
 
     for line in lines:
         match = re.match(section_pattern, line)
@@ -306,10 +307,12 @@ def extract_sections(content: str, verbose: bool = False) -> List[Dict[str, str]
             # Save previous section
             if current_section:
                 sections.append({
+                    'id': f'chunk_{section_id}',
                     'title': current_section,
                     'source': current_section,
                     'content': '\n'.join(current_lines).strip()
                 })
+                section_id += 1
 
             # Start new section
             current_section = match.group(1)
@@ -321,6 +324,7 @@ def extract_sections(content: str, verbose: bool = False) -> List[Dict[str, str]
     # Save last section
     if current_section:
         sections.append({
+            'id': f'chunk_{section_id}',
             'title': current_section,
             'source': current_section,
             'content': '\n'.join(current_lines).strip()
@@ -330,6 +334,157 @@ def extract_sections(content: str, verbose: bool = False) -> List[Dict[str, str]
         print(f"[INFO] Extracted {len(sections)} sections")
 
     return sections
+
+
+def extract_markdown_sections(content: str, verbose: bool = False) -> List[Dict[str, str]]:
+    """
+    Extract sections based on standard Markdown ## headers (level 2).
+
+    This mode is designed for standard Markdown files where:
+    - # is the main title (level 1)
+    - ## are section headers (level 2) that define chunk boundaries
+
+    Args:
+        content: Cleaned document content
+        verbose: Print progress
+
+    Returns:
+        List of section dictionaries with 'id', 'title', 'source', 'content'
+    """
+    sections = []
+
+    # Pattern to match level 2 headers: ## Title
+    # Matches: "## " followed by any text, but NOT "### " (level 3+)
+    section_pattern = r'^## ([^#].*)$'
+
+    lines = content.split('\n')
+    current_section = None
+    current_lines = []
+    section_id = 0
+
+    for line in lines:
+        match = re.match(section_pattern, line)
+
+        if match:
+            # Save previous section
+            if current_section:
+                sections.append({
+                    'id': f'chunk_{section_id}',
+                    'title': current_section,
+                    'source': current_section,
+                    'content': '\n'.join(current_lines).strip()
+                })
+                section_id += 1
+
+            # Start new section
+            current_section = match.group(1).strip()
+            current_lines = []
+        else:
+            # Only collect content if we're inside a section
+            if current_section:
+                current_lines.append(line)
+
+    # Save last section
+    if current_section:
+        sections.append({
+            'id': f'chunk_{section_id}',
+            'title': current_section,
+            'source': current_section,
+            'content': '\n'.join(current_lines).strip()
+        })
+
+    if verbose:
+        print(f"[INFO] Extracted {len(sections)} markdown sections (## headers)")
+
+    return sections
+
+
+def validate_chunks(data: Dict, verbose: bool = False) -> Tuple[bool, List[str]]:
+    """
+    Validate the structure of chunks JSON data.
+
+    Checks:
+    - Required top-level keys (metadata, chunks)
+    - Each chunk has required fields (title, source, content)
+    - IDs are strings if present
+    - No empty chunks
+    - Content is not too large
+
+    Args:
+        data: The JSON data structure to validate
+        verbose: Print detailed validation messages
+
+    Returns:
+        Tuple of (is_valid, list_of_errors)
+    """
+    errors = []
+
+    # Check top-level structure
+    if not isinstance(data, dict):
+        errors.append("Root structure must be a dictionary")
+        return False, errors
+
+    if 'metadata' not in data:
+        errors.append("Missing required key: 'metadata'")
+
+    if 'chunks' not in data:
+        errors.append("Missing required key: 'chunks'")
+        return False, errors
+
+    chunks = data.get('chunks', [])
+    if not isinstance(chunks, list):
+        errors.append("'chunks' must be a list")
+        return False, errors
+
+    if len(chunks) == 0:
+        errors.append("No chunks found in data")
+        return False, errors
+
+    # Validate each chunk
+    for i, chunk in enumerate(chunks):
+        chunk_num = i + 1
+
+        if not isinstance(chunk, dict):
+            errors.append(f"Chunk {chunk_num}: must be a dictionary")
+            continue
+
+        # Check required fields
+        required_fields = ['title', 'source', 'content']
+        for field in required_fields:
+            if field not in chunk:
+                errors.append(f"Chunk {chunk_num}: missing required field '{field}'")
+
+        # Validate ID type if present
+        if 'id' in chunk:
+            chunk_id = chunk['id']
+            if not isinstance(chunk_id, str):
+                errors.append(f"Chunk {chunk_num}: 'id' must be a string, got {type(chunk_id).__name__} (value: {chunk_id})")
+
+        # Check for empty content
+        if 'content' in chunk:
+            content = chunk['content']
+            if not isinstance(content, str):
+                errors.append(f"Chunk {chunk_num}: 'content' must be a string")
+            elif len(content.strip()) == 0:
+                errors.append(f"Chunk {chunk_num}: empty content")
+            elif len(content) > 50000:
+                errors.append(f"Chunk {chunk_num}: content too large ({len(content)} chars)")
+
+    if verbose:
+        print(f"\n{'='*70}")
+        print(f"CHUNK VALIDATION")
+        print(f"{'='*70}")
+        print(f"Total chunks:        {len(chunks)}")
+        print(f"Errors found:        {len(errors)}")
+        if errors:
+            print(f"\nErrors:")
+            for error in errors:
+                print(f"  - {error}")
+        else:
+            print(f"Status:              OK - All checks passed")
+        print(f"{'='*70}\n")
+
+    return len(errors) == 0, errors
 
 
 def chunk_by_size(content: str, chunk_size: int = 2000, overlap: int = 200, verbose: bool = False) -> List[Dict[str, any]]:
@@ -360,7 +515,7 @@ def chunk_by_size(content: str, chunk_size: int = 2000, overlap: int = 200, verb
         if current_size + para_size > chunk_size and current_chunk:
             # Save current chunk
             chunks.append({
-                'id': chunk_id,
+                'id': f'chunk_{chunk_id}',
                 'content': '\n\n'.join(current_chunk),
                 'size': current_size
             })
@@ -380,7 +535,7 @@ def chunk_by_size(content: str, chunk_size: int = 2000, overlap: int = 200, verb
     # Save last chunk
     if current_chunk:
         chunks.append({
-            'id': chunk_id,
+            'id': f'chunk_{chunk_id}',
             'content': '\n\n'.join(current_chunk),
             'size': current_size
         })
@@ -399,6 +554,7 @@ def prepare_for_rag(
     chunk_size: int = 2000,
     chunk_overlap: int = 200,
     extract_json: bool = False,
+    check: bool = False,
     verbose: bool = False
 ) -> int:
     """
@@ -517,6 +673,19 @@ def prepare_for_rag(
                 sections_md.append(f"## Section {i}: {section['title']}\n\n{section['content']}")
             content = '\n\n---\n\n'.join(sections_md)
 
+        elif chunk_mode == 'markdown-headers':
+            sections = extract_markdown_sections(content, verbose)
+            output_data = {
+                'metadata': metadata,
+                'chunks': sections
+            }
+
+            # Write sections as markdown
+            sections_md = []
+            for i, section in enumerate(sections, 1):
+                sections_md.append(f"## Section {i}: {section['title']}\n\n{section['content']}")
+            content = '\n\n---\n\n'.join(sections_md)
+
         elif chunk_mode == 'size':
             chunks = chunk_by_size(content, chunk_size, chunk_overlap, verbose)
             output_data = {
@@ -549,6 +718,18 @@ def prepare_for_rag(
             if verbose:
                 print(f"[INFO] JSON metadata written to: {json_file}")
 
+            # Validate chunks if requested
+            if check:
+                if chunk_mode == 'none':
+                    print(f"[WARNING] --check requires chunking mode (section, markdown-headers, or size)")
+                else:
+                    is_valid, errors = validate_chunks(output_data, verbose)
+                    if not is_valid:
+                        print(f"[ERROR] Chunk validation failed with {len(errors)} error(s):", file=sys.stderr)
+                        for error in errors:
+                            print(f"  - {error}", file=sys.stderr)
+                        return 1
+
         # Summary
         reduction_pct = ((original_size - cleaned_size) / original_size * 100) if original_size > 0 else 0
 
@@ -563,6 +744,8 @@ def prepare_for_rag(
         print(f"Chunk mode:          {chunk_mode}")
         if chunk_mode == 'section':
             print(f"Sections extracted:  {len(output_data['chunks'])}")
+        elif chunk_mode == 'markdown-headers':
+            print(f"Markdown sections:   {len(output_data['chunks'])}")
         elif chunk_mode == 'size':
             print(f"Chunks created:      {len(output_data['chunks'])}")
         print(f"{'='*70}\n")
@@ -612,9 +795,9 @@ def register_prepare_rag_command(subparsers):
     parser.add_argument(
         '--chunk',
         type=str,
-        choices=['none', 'section', 'size'],
+        choices=['none', 'section', 'markdown-headers', 'size'],
         default='none',
-        help='Chunking mode: none (default), section (by document sections), size (by character count)'
+        help='Chunking mode: none (default), section (merged docs with ## 📄), markdown-headers (standard ## headers), size (by character count)'
     )
 
     parser.add_argument(
@@ -638,6 +821,12 @@ def register_prepare_rag_command(subparsers):
     )
 
     parser.add_argument(
+        '--check',
+        action='store_true',
+        help='Validate chunk structure after generation (requires --extract-json)'
+    )
+
+    parser.add_argument(
         '-v', '--verbose',
         action='store_true',
         help='Show detailed progress'
@@ -651,6 +840,7 @@ def register_prepare_rag_command(subparsers):
         args.chunk_size,
         args.chunk_overlap,
         args.extract_json,
+        args.check,
         args.verbose
     ))
 
@@ -664,10 +854,11 @@ if __name__ == '__main__':
     parser.add_argument('input', help='Input Markdown file')
     parser.add_argument('-o', '--output', help='Output file path')
     parser.add_argument('--keep-urls', action='store_true')
-    parser.add_argument('--chunk', choices=['none', 'section', 'size'], default='none')
+    parser.add_argument('--chunk', choices=['none', 'section', 'markdown-headers', 'size'], default='none')
     parser.add_argument('--chunk-size', type=int, default=2000)
     parser.add_argument('--chunk-overlap', type=int, default=200)
     parser.add_argument('--extract-json', action='store_true')
+    parser.add_argument('--check', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
 
@@ -679,5 +870,6 @@ if __name__ == '__main__':
         args.chunk_size,
         args.chunk_overlap,
         args.extract_json,
+        args.check,
         args.verbose
     ))

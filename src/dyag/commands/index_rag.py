@@ -5,6 +5,12 @@ Ce module permet d'indexer des chunks dans une base vectorielle ChromaDB
 pour permettre la recherche sémantique via RAG.
 """
 
+import os
+# Configurer HF_HOME avant d'importer sentence_transformers
+# (remplace l'ancien TRANSFORMERS_CACHE qui est déprécié)
+if 'TRANSFORMERS_CACHE' in os.environ and 'HF_HOME' not in os.environ:
+    os.environ['HF_HOME'] = os.environ['TRANSFORMERS_CACHE']
+
 import chromadb
 from sentence_transformers import SentenceTransformer
 import json
@@ -317,7 +323,7 @@ def execute(args):
             print(f"  - {chunk_type}: {count}")
 
     print("\n" + "=" * 70)
-    print("✓ INDEXATION TERMINÉE")
+    print("[OK] INDEXATION TERMINÉE")
     print("=" * 70)
     print(f"\nVous pouvez maintenant interroger le RAG:")
     print(f"  dyag query-rag --collection {args.collection}")

@@ -5,9 +5,14 @@ Ce module permet de poser des questions en langage naturel et obtenir
 des réponses précises basées sur les chunks indexés.
 """
 
+import os
+# Configurer HF_HOME avant d'importer sentence_transformers
+# (remplace l'ancien TRANSFORMERS_CACHE qui est déprécié)
+if 'TRANSFORMERS_CACHE' in os.environ and 'HF_HOME' not in os.environ:
+    os.environ['HF_HOME'] = os.environ['TRANSFORMERS_CACHE']
+
 import chromadb
 from sentence_transformers import SentenceTransformer
-import os
 import sys
 import io
 from typing import List, Dict, Optional

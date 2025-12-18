@@ -20,7 +20,14 @@ Ce guide vous accompagne pas-à-pas dans la création d'un système RAG (Retriev
 
 ## Introduction
 
-Ce guide utilise comme exemple le fichier `examples/test-mygusi/applicationsIA_mini_normalized.json` qui contient des données d'applications du système d'information français. L'objectif est de créer un système RAG capable de répondre intelligemment à des questions sur ces applications.
+Ce guide couvre **deux workflows** pour créer un système RAG :
+
+1. **Workflow JSON** (original) : À partir de `applicationsIA_mini_normalized.json`
+2. **Workflow Markdown** (nouveau) : À partir de `applicationsIA_mini_opt.md` ✨
+
+Les deux workflows aboutissent au même résultat : un système RAG capable de répondre intelligemment à des questions sur les applications du système d'information français.
+
+> 📝 **Journal de réalisation** : Consultez `doc/RAG_WORKFLOW_JOURNAL.md` pour un exemple complet d'indexation réussie avec le workflow Markdown.
 
 ### Qu'est-ce qu'un RAG de qualité ?
 
@@ -309,6 +316,102 @@ Max: 1500
 ```
 
 **💡 Conseil :** Si la taille moyenne est trop grande (>1500), réduisez `--chunk-size`. Si trop petite (<500), augmentez-la.
+
+---
+
+## Étape 2.5 : Alternative - Workflow Markdown (NOUVEAU) ✨
+
+Si vous avez déjà un fichier Markdown optimisé (comme `applicationsIA_mini_opt.md`), vous pouvez utiliser directement `prepare-rag` pour le chunker.
+
+### Avantages du workflow Markdown
+- ✅ Pas besoin de convertir JSON → Markdown
+- ✅ Chunking automatique avec gestion du chevauchement
+- ✅ Export JSON automatique pour l'indexation
+- ✅ Plus rapide si le Markdown existe déjà
+
+### Commande de préparation Markdown
+
+**Commande CLI :**
+```bash
+# Créer le répertoire
+mkdir -p prepared
+
+# Chunker le fichier Markdown
+dyag prepare-rag examples/test-mygusi/applicationsIA_mini_opt.md \
+  --output prepared/applicationsIA_mini_chunks.jsonl \
+  --chunk size \
+  --chunk-size 1000 \
+  --chunk-overlap 200 \
+  --extract-json \
+  --verbose
+```
+
+**Paramètres expliqués :**
+- `--chunk size` : Découpage par taille de caractères (recommandé pour Markdown long)
+- `--chunk section` : Alternative pour découper par sections Markdown (# headers)
+- `--chunk-size 1000` : Taille cible par chunk
+- `--chunk-overlap 200` : Chevauchement entre chunks pour préserver le contexte
+- `--extract-json` : Génère aussi un fichier JSON avec métadonnées
+- `--verbose` : Affiche la progression
+
+**Résultat attendu :**
+```
+✓ 1010 chunks créés
+  Taille moyenne: 6244 caractères
+  Fichiers générés:
+  - prepared/applicationsIA_mini_chunks.jsonl (Markdown nettoyé)
+  - prepared/applicationsIA_mini_chunks.json (Métadonnées + chunks)
+```
+
+### ⚠️ Problème connu : IDs numériques
+
+Le fichier JSON généré contient des IDs numériques qui doivent être convertis en strings pour ChromaDB.
+
+**Script de correction :**
+```python
+import json
+
+# Charger le JSON
+with open('prepared/applicationsIA_mini_chunks.json', 'r', encoding='utf-8') as f:
+    data = json.load(f)
+
+# Convertir les IDs en strings
+for chunk in data['chunks']:
+    chunk['id'] = f'chunk_{chunk["id"]}'
+
+# Sauvegarder le JSON corrigé
+with open('prepared/applicationsIA_mini_chunks_fixed.json', 'w', encoding='utf-8') as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+
+print("✓ Fichier corrigé créé: prepared/applicationsIA_mini_chunks_fixed.json")
+```
+
+**Résultat :**
+```
+✓ Fichier corrigé créé: prepared/applicationsIA_mini_chunks_fixed.json
+  IDs: chunk_0, chunk_1, chunk_2...
+```
+
+### Vérification de la structure
+
+```bash
+python -c "
+import json
+data = json.load(open('prepared/applicationsIA_mini_chunks_fixed.json', 'r', encoding='utf-8'))
+print(f'Chunks: {len(data[\"chunks\"])}')
+print(f'First chunk ID: {data[\"chunks\"][0][\"id\"]}')
+print(f'ID type: {type(data[\"chunks\"][0][\"id\"])}')
+"
+```
+
+**Résultat attendu :**
+```
+Chunks: 1010
+First chunk ID: chunk_0
+ID type: <class 'str'>
+```
+
+💡 **Note** : Une fois le JSON corrigé, passez directement à l'étape 3 (Indexation) en utilisant `prepared/applicationsIA_mini_chunks_fixed.json`
 
 ---
 
@@ -778,6 +881,8 @@ print(f'Amélioration: {(v2[\"accuracy\"] - v1[\"accuracy\"])*100:+.1f}%')
 
 ### Annexe A : Commandes MCP disponibles
 
+#### Commandes actuellement disponibles
+
 | Commande CLI | Commande MCP | Status |
 |--------------|--------------|---------|
 | `dyag prepare_rag` | `dyag_prepare_rag` | ⚠️ **À ajouter** |
@@ -786,6 +891,33 @@ print(f'Amélioration: {(v2[\"accuracy\"] - v1[\"accuracy\"])*100:+.1f}%')
 | `dyag evaluate_rag` | `dyag_evaluate_rag` | ✅ Disponible |
 | `dyag create_rag` | `dyag_create_rag` | ⚠️ **À ajouter** |
 | `dyag analyze_training` | `dyag_analyze_training` | ✅ Disponible |
+
+#### Nouvelles commandes proposées (détails dans le Journal)
+
+Après analyse du workflow réel d'indexation (voir `doc/RAG_WORKFLOW_JOURNAL.md`), voici les **8 modules prioritaires** à développer :
+
+| Module | Priorité | Problème résolu | MCP |
+|--------|----------|-----------------|-----|
+| `dyag fix-chunk-ids` | ✨ P0 | Conversion manuelle IDs numériques → strings | `dyag_fix_chunk_ids` |
+| `dyag markdown-to-rag` | ✨ P0 | Pipeline 3 étapes → 1 commande | `dyag_markdown_to_rag` |
+| `dyag test-rag` | ✨ P0 | Erreurs Unicode Windows | `dyag_test_rag` |
+| `dyag create-eval-dataset` | ⭐ P1 | Création manuelle dataset | `dyag_create_eval_dataset` |
+| `dyag rag-stats` | ⭐ P1 | Pas de vue d'ensemble système | `dyag_rag_stats` |
+| `dyag validate-chunks` | 📋 P2 | Détection tardive problèmes | `dyag_validate_chunks` |
+| `dyag compare-rag` | 📊 P2 | Comparaison configurations | `dyag_compare_rag` |
+| `dyag export-rag` / `import-rag` | 💾 P2 | Sauvegarde/partage | `dyag_export_rag` |
+
+**Exemple de workflow simplifié avec les nouveaux modules** :
+```bash
+# Au lieu de 7 étapes manuelles actuelles
+dyag markdown-to-rag file.md --collection name --chunk-size 1000 --reset
+dyag rag-stats --collection name
+dyag create-eval-dataset --collection name --output eval.jsonl --num-questions 50
+dyag test-rag --collection name --question "..." --no-emoji
+dyag evaluate-rag eval.jsonl --collection name
+```
+
+📖 **Voir** : `doc/RAG_WORKFLOW_JOURNAL.md` pour les spécifications détaillées de chaque module
 
 ### Annexe B : Structure des fichiers générés
 

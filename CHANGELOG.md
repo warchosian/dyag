@@ -109,3 +109,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GitHub**: https://github.com/warchosian/dyag
 - **Issues**: https://github.com/warchosian/dyag/issues
 - **Releases**: https://github.com/warchosian/dyag/releases
+
+## v0.7.0 (2025-12-18)
+
+## v0.6.0 (2025-12-16)
+
+### Feat
+
+- add RAG (Retrieval-Augmented Generation) system
+
+## v0.5.0 (2025-12-16)
+
+### Feat
+
+- migrate to Python 3.10 and add RAG optional dependencies
+
+## v0.4.0 (2025-12-07)
+
+### Feat
+
+- commit initial du projet DYAG v0.4.0

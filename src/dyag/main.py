@@ -3,6 +3,12 @@
 Main entry point for dyag application.
 """
 
+import os
+# Configurer HF_HOME avant d'importer les commandes RAG
+# (remplace l'ancien TRANSFORMERS_CACHE qui est déprécié)
+if 'TRANSFORMERS_CACHE' in os.environ and 'HF_HOME' not in os.environ:
+    os.environ['HF_HOME'] = os.environ['TRANSFORMERS_CACHE']
+
 import argparse
 import sys
 
@@ -27,7 +33,9 @@ from dyag.commands import (
     register_prepare_rag_command,
     register_evaluate_rag_command,
     register_index_rag_command,
-    register_query_rag_command
+    register_query_rag_command,
+    register_json2md_command,
+    register_parkjson2md_command
 )
 
 
@@ -74,6 +82,8 @@ def create_parser():
     register_evaluate_rag_command(subparsers)
     register_index_rag_command(subparsers)
     register_query_rag_command(subparsers)
+    register_json2md_command(subparsers)
+    register_parkjson2md_command(subparsers)
 
     return parser
 
