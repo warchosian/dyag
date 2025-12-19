@@ -746,32 +746,116 @@ Le fichier `evaluation/results.json` contient :
 
 ---
 
+## 🎉 Nouveautés v0.7.0 - Module markdown-to-rag
+
+**Date d'implémentation** : 18 décembre 2024
+
+### 🚀 Module markdown-to-rag
+
+Le module **markdown-to-rag** a été développé et testé avec succès. Il constitue un pipeline complet en **une seule commande** pour aller du Markdown au RAG indexé.
+
+#### Commande
+
+```bash
+dyag markdown-to-rag input.md \
+  --collection my_collection \
+  --chunk-mode markdown-headers \
+  --reset
+```
+
+#### Test réel effectué
+
+```bash
+python -m dyag markdown-to-rag examples/test-mygusi/applicationsIA_mini_opt.md \
+  --collection test_pipeline \
+  --chunk-mode markdown-headers \
+  --reset
+```
+
+#### Résultats
+
+| Métrique | Valeur |
+|----------|--------|
+| **Fichier source** | applicationsIA_mini_opt.md (3.15 MB) |
+| **Mode chunking** | markdown-headers |
+| **Chunks extraits** | 1008 sections |
+| **Validation** | 0 erreurs ✅ |
+| **Modèle embedding** | all-MiniLM-L6-v2 (384 dim) |
+| **Chunks indexés** | 1008 / 1008 (100%) ✅ |
+| **Temps total** | 4m 31s |
+| **Collection** | test_pipeline |
+
+#### Workflow automatisé
+
+Le pipeline exécute automatiquement :
+
+1. **[1/3] Préparation et chunking**
+   - Extraction des sections avec `extract_markdown_sections()`
+   - Validation automatique des chunks avec `validate_chunks()`
+   - 0 erreurs détectées
+
+2. **[2/3] Génération des embeddings**
+   - Chargement du modèle all-MiniLM-L6-v2
+   - Connexion à ChromaDB
+   - Création de la collection
+
+3. **[3/3] Indexation ChromaDB**
+   - Génération des embeddings par lots (batch_size=100)
+   - Indexation de 1008 chunks en 11 lots
+   - Taux de réussite : 100%
+
+#### Avantages
+
+- ✅ **1 commande au lieu de 3** (prepare-rag + validation + index-rag)
+- ✅ **Pipeline automatique** avec gestion d'erreurs centralisée
+- ✅ **Fichiers temporaires gérés** automatiquement (option `--keep-intermediate`)
+- ✅ **Logs unifiés** affichant les 3 phases
+- ✅ **Validation intégrée** par défaut (option `--no-check` pour désactiver)
+- ✅ **Messages clairs** avec codes retour appropriés
+
+#### Code source
+
+- **Fichier créé** : `src/dyag/commands/markdown_to_rag.py`
+- **Fonctions réutilisées** : `extract_markdown_sections()`, `validate_chunks()`, `ChunkIndexer`
+- **Enregistré dans** : `src/dyag/commands/__init__.py`, `src/dyag/main.py`
+
+#### Problèmes résolus
+
+1. ✅ **IDs numériques** : Tous les chunks ont maintenant des IDs en format string (`chunk_0`, `chunk_1`, etc.)
+2. ✅ **Encodage Unicode** : Correction des emojis dans `query-rag` pour compatibilité Windows
+   - ❌ → `[ERROR]`
+   - ✓ → `[OK]`
+   - ❓ → `[QUESTION]`
+   - 🔍 → `[SEARCH]`
+   - 💬 → `[ANSWER]`
+   - 📊 → `[METADATA]`
+
+---
+
 ## 🔄 Prochaines étapes
 
 1. [x] ✅ Terminer l'indexation dans ChromaDB - **TERMINÉ**
-2. [ ] ⚠️ Corriger les problèmes d'encodage Unicode dans les commandes CLI query-rag et index-rag
-3. [ ] Tester le RAG avec des questions simples via Python
-4. [ ] Tester le RAG avec des questions complexes
-5. [ ] Créer un dataset d'évaluation
-6. [ ] Évaluer la qualité des réponses
-7. [ ] Optimiser le chunking si nécessaire (réduire chunk-size de 6244 à ~1000 caractères)
+2. [x] ✅ Corriger les problèmes d'encodage Unicode dans les commandes CLI - **TERMINÉ**
+3. [x] ✅ Implémenter le module markdown-to-rag - **TERMINÉ**
+4. [ ] Implémenter le module test-rag (P0)
+5. [ ] Implémenter le module rag-stats (P1)
+6. [ ] Créer un dataset d'évaluation
+7. [ ] Évaluer la qualité des réponses
 8. [ ] Documenter les résultats d'évaluation
 
 ## 🐛 Problèmes identifiés et solutions
 
-### Problème 1 : IDs numériques dans les chunks
+### ✅ Problème 1 : IDs numériques dans les chunks - **RÉSOLU**
 **Symptôme** : `Expected ID to be a str, got 1`
 **Cause** : Le command `prepare-rag` génère des IDs numériques au lieu de strings
-**Solution** : Conversion manuelle avec script Python pour préfixer les IDs avec "chunk_"
+**Solution** : Modifié toutes les fonctions de chunking (`chunk_by_size()`, `extract_sections()`, `extract_markdown_sections()`) pour générer des IDs en format string `chunk_0`, `chunk_1`, etc.
+**Date de résolution** : 18 décembre 2024
 
-**TODO** : Corriger `prepare-rag` pour générer directement des IDs en format string
-
-### Problème 2 : Encodage Unicode Windows
+### ✅ Problème 2 : Encodage Unicode Windows - **RÉSOLU**
 **Symptôme** : `UnicodeEncodeError: 'charmap' codec can't encode character`
 **Cause** : Les commandes utilisent des emojis UTF-8 incompatibles avec la console Windows (cp1252)
-**Solution temporaire** : Utiliser l'API Python directement au lieu du CLI
-
-**TODO** : Supprimer les emojis des messages ou configurer l'encodage UTF-8 pour Windows
+**Solution** : Remplacé tous les emojis par des équivalents ASCII dans `evaluate_rag.py`, `index_rag.py`, `query_rag.py`
+**Date de résolution** : 18 décembre 2024
 
 ### Problème 3 : Chunks trop grands
 **Symptôme** : Taille moyenne 6244 caractères au lieu de 1000 demandés

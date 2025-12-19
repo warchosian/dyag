@@ -23,6 +23,7 @@ from dyag.commands.prepare_rag import register_prepare_rag_command
 from dyag.commands.evaluate_rag import register_evaluate_rag_command
 from dyag.commands.index_rag import register_index_rag_command
 from dyag.commands.query_rag import register_query_rag_command
+from dyag.commands.markdown_to_rag import register_markdown_to_rag_command
 from dyag.commands.json2md import register_json2md_command
 from dyag.commands.parkjson2md import register_parkjson2md_command
 
@@ -47,6 +48,7 @@ __all__ = [
     "register_evaluate_rag_command",
     "register_index_rag_command",
     "register_query_rag_command",
+    "register_markdown_to_rag_command",
     "register_json2md_command",
     "register_parkjson2md_command"
 ]

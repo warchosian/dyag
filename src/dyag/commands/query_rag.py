@@ -29,31 +29,31 @@ def execute(args):
             timeout=args.timeout
         )
     except Exception as e:
-        print(f"❌ Erreur d'initialisation du RAG: {e}")
+        print(f"[ERROR] Erreur d'initialisation du RAG: {e}")
         return 1
 
     # Afficher les statistiques
     if args.verbose:
         stats = rag.get_stats()
-        print(f"\n📊 Statistiques:")
-        print(f"  - Chunks indexés: {stats['total_chunks']}")
+        print(f"\n[STATS] Statistiques:")
+        print(f"  - Chunks indexes: {stats['total_chunks']}")
         print(f"  - Collection: {stats['collection_name']}")
-        print(f"  - Modèle LLM: {stats['llm_model']}")
+        print(f"  - Modele LLM: {stats['llm_model']}")
         print()
 
     # Mode question directe
     if args.query:
-        print(f"\n❓ Question: {args.query}")
-        print("\n🔍 Recherche en cours...")
+        print(f"\n[QUESTION] {args.query}")
+        print("\n[SEARCH] Recherche en cours...")
 
         try:
             result = rag.ask(args.query, n_chunks=args.n_chunks)
 
-            print(f"\n💬 Réponse:")
+            print(f"\n[ANSWER]")
             print(result['answer'])
 
             if args.verbose:
-                print(f"\n📊 Métadonnées:")
+                print(f"\n[METADATA]")
                 print(f"  - Sources: {len(result['sources'])} chunks")
                 print(f"  - Tokens: {result['tokens_used']}")
                 print(f"  - IDs: {', '.join(result['sources'][:3])}...")
@@ -61,7 +61,7 @@ def execute(args):
             return 0
 
         except Exception as e:
-            print(f"\n❌ Erreur lors de la requête: {e}")
+            print(f"\n[ERROR] Erreur lors de la requete: {e}")
             return 1
 
     # Mode interactif
@@ -71,19 +71,19 @@ def execute(args):
 
     while True:
         try:
-            question = input("\n❓ Question: ")
+            question = input("\n[QUESTION] ")
 
             if not question.strip():
                 continue
 
-            print("\n🔍 Recherche en cours...")
+            print("\n[SEARCH] Recherche en cours...")
             result = rag.ask(question, n_chunks=args.n_chunks)
 
-            print(f"\n💬 Réponse:")
+            print(f"\n[ANSWER]")
             print(result['answer'])
 
             if args.verbose:
-                print(f"\n📊 Métadonnées:")
+                print(f"\n[METADATA]")
                 print(f"  - Sources: {len(result['sources'])} chunks")
                 print(f"  - Tokens: {result['tokens_used']}")
                 print(f"  - IDs: {', '.join(result['sources'][:3])}...")
@@ -92,7 +92,7 @@ def execute(args):
             print("\n\nAu revoir!")
             break
         except Exception as e:
-            print(f"\n❌ Erreur: {e}")
+            print(f"\n[ERROR] {e}")
 
     return 0
 
