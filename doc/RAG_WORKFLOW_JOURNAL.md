@@ -832,16 +832,112 @@ Le pipeline exécute automatiquement :
 
 ---
 
+### 🚀 Module test-rag
+
+Le module **test-rag** a été développé et testé avec succès. Il permet de tester rapidement le RAG sans problèmes d'encodage Unicode.
+
+#### Commande
+
+```bash
+dyag test-rag \
+  --collection my_collection \
+  --question "Qu'est-ce que 6Tzen ?" \
+  --n-chunks 5 \
+  --format text
+```
+
+#### Fonctionnalités
+
+- ✅ **Output simplifié** : Texte propre sans emojis (compatible Windows)
+- ✅ **Format JSON** : Support de sortie JSON pour intégration
+- ✅ **Temps de réponse** : Affiche search_time, answer_time, total_time
+- ✅ **Scores de similarité** : Affiche les scores pour chaque source
+- ✅ **Mode interactif** : Si pas de question fournie
+- ✅ **Option --show-chunks** : Affiche le contenu des chunks
+
+#### Code source
+
+- **Fichier créé** : `src/dyag/commands/test_rag.py`
+- **Fonctions** : `test_rag_question()`, `format_output_text()`, `format_output_json()`
+
+---
+
+### 🚀 Module rag-stats
+
+Le module **rag-stats** a été développé et testé avec succès. Il affiche des statistiques détaillées sur une collection ChromaDB.
+
+#### Commande
+
+```bash
+dyag rag-stats \
+  --collection test_pipeline \
+  --format table \
+  --export stats.json
+```
+
+#### Test réel effectué
+
+```bash
+python -m dyag rag-stats --collection test_pipeline --format table
+```
+
+#### Résultats
+
+```
+======================================================================
+STATISTIQUES COLLECTION: test_pipeline
+======================================================================
+
+Informations generales:
+  Total chunks:          1008
+  Echantillon analyse:   1000
+  Creee le:              2025-12-07T17:03:33
+  Derniere MAJ:          2025-12-18T18:35:39
+  Espace disque:         265.76 MB
+
+Distribution des tailles:
+  Minimum:               844 caracteres
+  Maximum:               16861 caracteres
+  Moyenne:               3080 caracteres
+  Mediane:               2358 caracteres
+
+Distribution par type:
+  unknown:  1000 (99.2%)
+
+Metadonnees disponibles:
+  - title: 1000/1000 (100.0%)
+  - chunk_type: 1000/1000 (100.0%)
+======================================================================
+```
+
+#### Fonctionnalités
+
+- ✅ **Statistiques complètes** : Total chunks, tailles, types, métadonnées
+- ✅ **3 formats de sortie** : table, JSON, Markdown
+- ✅ **Export JSON** : Option --export pour sauvegarder les stats
+- ✅ **Mode détaillé** : Option --detailed pour analyser tous les chunks (plus lent)
+- ✅ **Top mots-clés** : Extraction des 10 mots les plus fréquents (en mode détaillé)
+- ✅ **Espace disque** : Calcule la taille de la collection sur disque
+
+#### Code source
+
+- **Fichier créé** : `src/dyag/commands/rag_stats.py`
+- **Fonctions** : `compute_stats()`, `format_output_table()`, `format_output_markdown()`, `extract_keywords()`
+
+---
+
 ## 🔄 Prochaines étapes
 
 1. [x] ✅ Terminer l'indexation dans ChromaDB - **TERMINÉ**
 2. [x] ✅ Corriger les problèmes d'encodage Unicode dans les commandes CLI - **TERMINÉ**
 3. [x] ✅ Implémenter le module markdown-to-rag - **TERMINÉ**
-4. [ ] Implémenter le module test-rag (P0)
-5. [ ] Implémenter le module rag-stats (P1)
+4. [x] ✅ Implémenter le module test-rag (P0) - **TERMINÉ**
+5. [x] ✅ Implémenter le module rag-stats (P1) - **TERMINÉ**
 6. [ ] Créer un dataset d'évaluation
 7. [ ] Évaluer la qualité des réponses
 8. [ ] Documenter les résultats d'évaluation
+9. [ ] Implémenter les modules Phase 3 (create-eval-dataset, compare-rag)
+10. [ ] Implémenter les modules Phase 4 (export-rag, import-rag)
 
 ## 🐛 Problèmes identifiés et solutions
 
@@ -1237,11 +1333,11 @@ dyag import-rag rag_backup.zip --collection applications_restored
 | # | Module | Priorité | Status | Complexité | Effort | MCP | Dépendances |
 |---|--------|----------|--------|------------|--------|-----|-------------|
 | 1 | `fix-chunk-ids` | ~~✨ P0~~ | ✅ **FAIT v0.7** | Faible | - | ✅ | - |
-| 2 | `markdown-to-rag` | ✨ P0 | 🔨 En cours | Moyenne | 2j | ✅ | prepare-rag, index-rag |
-| 3 | `test-rag` | ✨ P0 | 📋 À faire | Faible | 1j | ✅ | query-rag |
+| 2 | `markdown-to-rag` | ~~✨ P0~~ | ✅ **FAIT v0.7** | Moyenne | - | ✅ | prepare-rag, index-rag |
+| 3 | `test-rag` | ~~✨ P0~~ | ✅ **FAIT v0.7** | Faible | - | ✅ | query-rag |
 | 4 | `validate-chunks` | ~~📋 P2~~ | ✅ **FAIT v0.7** | Moyenne | - | ✅ | - |
 | 5 | `create-eval-dataset` | ⭐ P1 | 📋 À faire | Élevée | 3j | ✅ | query-rag, LLM |
-| 6 | `rag-stats` | ⭐ P1 | 📋 À faire | Faible | 1j | ✅ | ChromaDB |
+| 6 | `rag-stats` | ~~⭐ P1~~ | ✅ **FAIT v0.7** | Faible | - | ✅ | ChromaDB |
 | 7 | `compare-rag` | 📊 P2 | 📋 À faire | Élevée | 4j | ✅ | evaluate-rag |
 | 8 | `export-rag` / `import-rag` | 💾 P2 | 📋 À faire | Moyenne | 2j | ✅ | ChromaDB |
 

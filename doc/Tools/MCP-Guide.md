@@ -1,4 +1,4 @@
-arfait ! J'ai créé un serveur MCP complet pour dyag. Voici ce qui a été fait :
+Parfait ! J'ai créé un serveur MCP complet pour dyag. Voici ce qui a été fait :
 
   Serveur MCP pour dyag créé !
 
