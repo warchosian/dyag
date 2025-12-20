@@ -2,11 +2,11 @@
 
 **Dyag** - Outil puissant de manipulation de fichiers et conversion avec support des diagrammes et système RAG intégré.
 
-[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)](https://github.com/warchosian/dyag/releases/tag/v0.6.0)
+[![Version](https://img.shields.io/badge/version-0.8.0-blue.svg)](https://github.com/warchosian/dyag/releases/tag/v0.8.0)
 [![Python](https://img.shields.io/badge/python-3.10+-green.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-139%20passing-success.svg)](https://github.com/warchosian/dyag)
-[![Coverage](https://img.shields.io/badge/coverage-33%25-yellow.svg)](https://github.com/warchosian/dyag)
+[![Tests](https://img.shields.io/badge/tests-133%20passing-success.svg)](https://github.com/warchosian/dyag)
+[![Coverage](https://img.shields.io/badge/coverage-21%25-yellow.svg)](https://github.com/warchosian/dyag)
 
 ## 📋 Table des matières
 
@@ -34,12 +34,13 @@
 - **Interactivité** HTML avec navigation améliorée
 - **Compression PDF** avancée
 
-### Système RAG (v0.6.0)
+### Système RAG (v0.6.0+)
 - **Indexation sémantique** avec ChromaDB et Sentence Transformers
 - **Multi-providers LLM** : OpenAI, Anthropic/Claude, Ollama
 - **Q&A intelligent** sur vos documents
 - **Évaluation** de la qualité du système RAG
 - **Préparation** automatique de datasets
+- **Génération de questions/réponses** pour RAG et fine-tuning (v0.8.0) 🆕
 
 ### Génération de documentation
 - **Project → Markdown** : documentation automatique de projets
@@ -133,7 +134,16 @@ Pour le rendu des diagrammes, vous aurez besoin :
 | `dyag query_rag` | Interroger le système RAG |
 | `dyag evaluate_rag` | Évaluer la qualité du système RAG |
 | `dyag create_rag` | Créer un dataset pour le RAG |
+| `dyag markdown-to-rag` | Pipeline complet Markdown → RAG |
+| `dyag generate-questions` | Générer des questions/réponses pour RAG et fine-tuning 🆕 |
 | `dyag analyze_training` | Analyser les données d'entraînement |
+
+### Manipulation JSON
+
+| Commande | Description |
+|----------|-------------|
+| `dyag parkjson2md` | Convertir JSON parc applicatif vers Markdown |
+| `dyag parkjson2json` | Filtrer et extraire données JSON |
 
 ## 💡 Utilisation
 
@@ -212,6 +222,61 @@ dyag query_rag "Comment fonctionne X ?" --collection my_docs
 
 # 4. Évaluer (optionnel)
 dyag evaluate_rag dataset.jsonl --collection my_docs
+```
+
+### Génération de Questions/Réponses (v0.8.0) 🆕
+
+La commande `generate-questions` permet de générer automatiquement des paires question/réponse depuis des documents Markdown structurés. Cas d'usage :
+- **Évaluation RAG** : Créer des datasets de test
+- **Fine-tuning** : Préparer des données d'entraînement pour LLMs
+
+#### Formats de sortie
+
+- **`rag`** : Format pour évaluation RAG (avec métadonnées)
+- **`finetuning`** : Format OpenAI/Anthropic pour fine-tuning
+- **`simple`** : Format prompt/completion minimal
+- **`all`** : Génère les 3 formats simultanément
+
+#### Exemples d'utilisation
+
+```bash
+# Générer questions pour évaluation RAG
+dyag generate-questions applications.md --format rag
+
+# Générer dataset pour fine-tuning
+dyag generate-questions applications.md \
+  --format finetuning \
+  --output dataset_ft.jsonl \
+  --questions-per-section 5
+
+# Générer tous les formats
+dyag generate-questions applications.md --format all
+
+# Options avancées
+dyag generate-questions applications.md \
+  --format rag \
+  --categories status,domains,contacts \
+  --difficulty easy,medium \
+  --questions-per-section 3 \
+  --verbose
+```
+
+#### Workflow complet RAG + Fine-tuning
+
+```bash
+# 1. Générer questions depuis documentation
+dyag generate-questions apps.md --format all --output eval/questions
+
+# 2. Créer base RAG
+dyag markdown-to-rag apps.md --collection apps_rag
+
+# 3. Évaluer RAG
+dyag evaluate-rag eval/questions_rag.jsonl --collection apps_rag
+
+# 4. Fine-tuner un modèle (OpenAI)
+openai api fine_tunes.create \
+  -t eval/questions_finetuning.jsonl \
+  -m gpt-3.5-turbo
 ```
 
 ### Providers LLM supportés
