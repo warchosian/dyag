@@ -29,6 +29,27 @@ from dyag.commands.rag_stats import register_rag_stats_command
 from dyag.commands.json2md import register_json2md_command
 from dyag.commands.parkjson2md import register_parkjson2md_command
 from dyag.commands.parkjson2json import register_parkjson2json_command
+def register_generate_questions_command(subparsers):
+    """Register generate-questions command"""
+    from dyag.commands.generate_questions import run_generate_questions
+
+    parser = subparsers.add_parser(
+        "generate-questions",
+        help="Générer des questions/réponses pour RAG et fine-tuning"
+    )
+
+    parser.add_argument("input", help="Fichier Markdown source")
+    parser.add_argument("--output", help="Fichier de sortie (défaut: {input}_questions.jsonl)", default=None)
+    parser.add_argument("--format", choices=["rag", "finetuning", "simple", "all"], default="rag", help="Format de sortie (défaut: rag)")
+    parser.add_argument("--system-prompt", help="Prompt système pour format finetuning", default=None)
+    parser.add_argument("--mode", choices=["template", "llm", "hybrid"], default="template", help="Mode de génération (défaut: template)")
+    parser.add_argument("--questions-per-section", type=int, default=3, help="Nombre de questions par section (défaut: 3)")
+    parser.add_argument("--categories", help="Catégories de questions (séparées par des virgules, défaut: all)", default="all")
+    parser.add_argument("--difficulty", help="Niveaux de difficulté (séparés par des virgules, défaut: easy,medium,hard)", default="easy,medium,hard")
+    parser.add_argument("--language", default="fr", help="Langue des questions (défaut: fr)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Mode verbeux")
+
+    parser.set_defaults(func=run_generate_questions)
 
 __all__ = [
     "register_img2pdf_command",
@@ -56,5 +77,6 @@ __all__ = [
     "register_rag_stats_command",
     "register_json2md_command",
     "register_parkjson2md_command",
-    "register_parkjson2json_command"
+    "register_parkjson2json_command",
+    "register_generate_questions_command"
 ]

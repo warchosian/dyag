@@ -39,7 +39,8 @@ from dyag.commands import (
     register_rag_stats_command,
     register_json2md_command,
     register_parkjson2md_command,
-    register_parkjson2json_command
+    register_parkjson2json_command,
+    register_generate_questions_command
 )
 
 
@@ -92,6 +93,7 @@ def create_parser():
     register_json2md_command(subparsers)
     register_parkjson2md_command(subparsers)
     register_parkjson2json_command(subparsers)
+    register_generate_questions_command(subparsers)
 
     return parser
 
