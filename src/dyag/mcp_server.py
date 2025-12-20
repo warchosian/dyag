@@ -236,6 +236,50 @@ class MCPServer:
                     },
                     "required": ["input"]
                 }
+            },
+            "dyag_generate_questions": {
+                "description": "Generate question/answer pairs from structured Markdown documents for RAG evaluation and model fine-tuning. Supports multiple output formats (rag, finetuning, simple) with automatic category detection and validation.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "input": {
+                            "type": "string",
+                            "description": "Path to structured Markdown file containing applications or documentation"
+                        },
+                        "output": {
+                            "type": "string",
+                            "description": "Output file path (default: {input_stem}_questions)"
+                        },
+                        "format": {
+                            "type": "string",
+                            "enum": ["rag", "finetuning", "simple", "all"],
+                            "description": "Output format: 'rag' for RAG evaluation, 'finetuning' for model training, 'simple' for basic prompt/completion, 'all' for all formats (default: rag)",
+                            "default": "rag"
+                        },
+                        "questions_per_section": {
+                            "type": "integer",
+                            "description": "Number of questions to generate per section (default: 3)",
+                            "default": 3,
+                            "minimum": 1,
+                            "maximum": 10
+                        },
+                        "categories": {
+                            "type": "string",
+                            "description": "Comma-separated list of question categories (default: all). Available: status,domains,description,contacts,events,websites,actors,related_apps,metadata",
+                            "default": "all"
+                        },
+                        "difficulty": {
+                            "type": "string",
+                            "description": "Comma-separated difficulty levels (default: easy,medium,hard)",
+                            "default": "easy,medium,hard"
+                        },
+                        "system_prompt": {
+                            "type": "string",
+                            "description": "Custom system prompt for finetuning format (uses default expert assistant prompt if not specified)"
+                        }
+                    },
+                    "required": ["input"]
+                }
             }
         }
 
@@ -586,6 +630,97 @@ class MCPServer:
                             {
                                 "type": "text",
                                 "text": f"Error indexing RAG: {str(e)}"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_generate_questions":
+                try:
+                    from dyag.commands.generate_questions import run_generate_questions
+                    from argparse import Namespace
+
+                    # Verify input file exists
+                    input_path = Path(arguments["input"])
+                    if not input_path.exists():
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"Input file not found: {arguments['input']}"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    # Determine output path
+                    output_base = arguments.get("output")
+                    if not output_base:
+                        output_base = f"{input_path.stem}_questions"
+
+                    # Create args namespace compatible with run_generate_questions
+                    args = Namespace(
+                        input=str(input_path),
+                        output=output_base,
+                        format=arguments.get("format", "rag"),
+                        system_prompt=arguments.get("system_prompt"),
+                        mode="template",  # Currently only template mode is implemented
+                        questions_per_section=arguments.get("questions_per_section", 3),
+                        categories=arguments.get("categories", "all"),
+                        difficulty=arguments.get("difficulty", "easy,medium,hard"),
+                        language="fr",
+                        verbose=False  # Disable verbose for MCP
+                    )
+
+                    # Run the command
+                    result_code = run_generate_questions(args)
+
+                    if result_code == 0:
+                        # Determine which output files were created
+                        format_type = arguments.get("format", "rag")
+
+                        if format_type == "all":
+                            files = [
+                                f"{output_base}_rag.jsonl",
+                                f"{output_base}_finetuning.jsonl",
+                                f"{output_base}_simple.jsonl"
+                            ]
+                            files_text = "\n".join([f"  - {f}" for f in files])
+                            response_text = f"**Questions Generated Successfully**\n\nOutput files:\n{files_text}\n\nAll formats have been generated: RAG evaluation, fine-tuning, and simple prompt/completion."
+                        else:
+                            output_file = f"{output_base}_{format_type}.jsonl"
+                            format_names = {
+                                "rag": "RAG evaluation",
+                                "finetuning": "model fine-tuning",
+                                "simple": "simple prompt/completion"
+                            }
+                            response_text = f"**Questions Generated Successfully**\n\nOutput file: {output_file}\nFormat: {format_names.get(format_type, format_type)}\n\nQuestions have been generated and validated."
+
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": response_text
+                                }
+                            ]
+                        }
+                    else:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Failed to generate questions. Check that the input file has the expected Markdown structure."
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                except Exception as e:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Error generating questions: {str(e)}"
                             }
                         ],
                         "isError": True
