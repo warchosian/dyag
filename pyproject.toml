@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dyag"
-version = "0.7.0"
+version = "0.8.0"
 description = "Dyag - Markdown to HTML converter with diagram support (Graphviz, PlantUML, Mermaid)"
 authors = ["MARCHAL Hervé <herve.marchal@developpement-durable.gouv.fr>"]
 readme = "README.md"

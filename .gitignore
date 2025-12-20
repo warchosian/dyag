@@ -66,3 +66,34 @@ poetry.lock
 anchor_*.txt
 verification_*.txt
 md2html_debug.txt
+
+# Data directories (large datasets, generated files)
+chroma_db/
+chroma_db_test/
+data/finetuning/*.jsonl
+!data/finetuning/README.md
+!data/finetuning/dataset_manual_*.jsonl
+examples/test-mygusi/split_*/
+examples/test-mygusi/*.md
+examples/test-mygusi/*.json
+!examples/test-mygusi/applicationsIA_mini.json
+doc-flattened/
+doc-flattened-merged/
+evaluation_*.json
+
+# RAG databases and indexes
+rag_db/
+*.faiss
+*.pkl
+*.pickle
+
+# Large model files
+*.bin
+*.safetensors
+*.gguf
+models/
+
+# Temporary split directories
+*_split/
+split_md*/
+split_json*/

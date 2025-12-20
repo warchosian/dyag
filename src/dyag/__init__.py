@@ -14,7 +14,7 @@ if 'TRANSFORMERS_CACHE' in os.environ and 'HF_HOME' not in os.environ:
 # car nous le gérons déjà en configurant HF_HOME
 warnings.filterwarnings('ignore', message='.*TRANSFORMERS_CACHE.*', category=FutureWarning)
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 __author__ = "Your Name"
 __email__ = "your.email@example.com"
 

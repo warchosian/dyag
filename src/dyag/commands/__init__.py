@@ -24,8 +24,11 @@ from dyag.commands.evaluate_rag import register_evaluate_rag_command
 from dyag.commands.index_rag import register_index_rag_command
 from dyag.commands.query_rag import register_query_rag_command
 from dyag.commands.markdown_to_rag import register_markdown_to_rag_command
+from dyag.commands.test_rag import register_test_rag_command
+from dyag.commands.rag_stats import register_rag_stats_command
 from dyag.commands.json2md import register_json2md_command
 from dyag.commands.parkjson2md import register_parkjson2md_command
+from dyag.commands.parkjson2json import register_parkjson2json_command
 
 __all__ = [
     "register_img2pdf_command",
@@ -49,6 +52,9 @@ __all__ = [
     "register_index_rag_command",
     "register_query_rag_command",
     "register_markdown_to_rag_command",
+    "register_test_rag_command",
+    "register_rag_stats_command",
     "register_json2md_command",
-    "register_parkjson2md_command"
+    "register_parkjson2md_command",
+    "register_parkjson2json_command"
 ]

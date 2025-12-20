@@ -35,8 +35,11 @@ from dyag.commands import (
     register_index_rag_command,
     register_query_rag_command,
     register_markdown_to_rag_command,
+    register_test_rag_command,
+    register_rag_stats_command,
     register_json2md_command,
-    register_parkjson2md_command
+    register_parkjson2md_command,
+    register_parkjson2json_command
 )
 
 
@@ -84,8 +87,11 @@ def create_parser():
     register_index_rag_command(subparsers)
     register_query_rag_command(subparsers)
     register_markdown_to_rag_command(subparsers)
+    register_test_rag_command(subparsers)
+    register_rag_stats_command(subparsers)
     register_json2md_command(subparsers)
     register_parkjson2md_command(subparsers)
+    register_parkjson2json_command(subparsers)
 
     return parser
 
