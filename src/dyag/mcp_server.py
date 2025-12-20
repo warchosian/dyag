@@ -231,7 +231,7 @@ class MCPServer:
                         "reset": {
                             "type": "boolean",
                             "description": "Reset collection before indexing (deletes existing data)",
-                            "default": false
+                            "default": False
                         }
                     },
                     "required": ["input"]
