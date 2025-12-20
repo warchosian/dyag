@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-12-20
+
+### Added
+- **ParkJSON Tools** - New commands for application portfolio management
+  - `parkjson2md`: Convert JSON application data to comprehensive Markdown reports
+    - Full field coverage: DICT, DACP, Technologies, Hébergements, Événements, Sécurité
+    - Enhanced Événements section with version and commentaire details
+    - Base juridique and Finalités sections
+    - Domaines métier and Ministères porteurs
+  - `parkjson2json`: Filter and extract JSON application data with metadata
+    - Application filtering by name or ID
+    - Preserve structure or flatten output
+    - Metadata generation (extraction date, source file, filters)
+  - `--split-dir` option for both commands to generate separate files per application
+    - Sanitized filenames with accent handling for cross-platform compatibility
+    - Format: `inputname_appname.ext`
+
+### Documentation
+- Added comprehensive **ParkJSON Tools** documentation in `doc/Tools/ParkJSON-Tools.md`
+  - Usage examples and workflow patterns
+  - Complete field reference
+  - Command options and filtering syntax
+- Updated `doc/README.md` with ParkJSON Tools reference
+
+### Changed
+- Updated `.gitignore` to exclude data directories and large files
+  - Data directories (chroma_db/, data/finetuning/, examples splits)
+  - RAG databases (*.faiss, *.pkl, *.pickle)
+  - Large model files (*.bin, *.safetensors, *.gguf)
+
+## [0.7.0] - 2025-12-18
+
+### Added
+- Command `markdown-to-rag` for creating RAG pipeline from Markdown files
+- Modular chunking strategies for improved RAG performance
+
 ## [0.6.0] - 2025-01-16
 
 ### Added
@@ -99,6 +135,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Links
 
+[0.8.0]: https://github.com/warchosian/dyag/releases/tag/v0.8.0
+[0.7.0]: https://github.com/warchosian/dyag/releases/tag/v0.7.0
 [0.6.0]: https://github.com/warchosian/dyag/releases/tag/v0.6.0
 [0.5.0]: https://github.com/warchosian/dyag/releases/tag/v0.5.0
 [0.4.0]: https://github.com/warchosian/dyag/releases/tag/v0.4.0
