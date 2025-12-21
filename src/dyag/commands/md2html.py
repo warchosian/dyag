@@ -256,9 +256,23 @@ def process_markdown_to_html(
         print(f"Output: {output_path}")
 
     try:
-        # Read markdown content
-        with open(md_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        # Read markdown content with encoding detection
+        content = None
+        encodings_to_try = ['utf-8', 'cp1252', 'latin-1', 'iso-8859-1']
+
+        for encoding in encodings_to_try:
+            try:
+                with open(md_path, 'r', encoding=encoding) as f:
+                    content = f.read()
+                if verbose and encoding != 'utf-8':
+                    print(f"Note: File was read with {encoding} encoding (not UTF-8)", file=sys.stderr)
+                break
+            except UnicodeDecodeError:
+                continue
+
+        if content is None:
+            print(f"Error: Could not decode file with any supported encoding ({', '.join(encodings_to_try)})", file=sys.stderr)
+            return 1
 
         # Extract code blocks
         blocks = extract_code_blocks(content)
