@@ -237,6 +237,23 @@ class MCPServer:
                     "required": ["input"]
                 }
             },
+            "dyag_generate_evaluation_report": {
+                "description": "Generate detailed analysis report from RAG evaluation results. Analyzes expected vs obtained answers, calculates similarity metrics, identifies problems, and provides recommendations.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "input": {
+                            "type": "string",
+                            "description": "Path to RAG evaluation results JSON file"
+                        },
+                        "output": {
+                            "type": "string",
+                            "description": "Output markdown report path (default: {input}_report.md)"
+                        }
+                    },
+                    "required": ["input"]
+                }
+            },
             "dyag_generate_questions": {
                 "description": "Generate question/answer pairs from structured Markdown documents for RAG evaluation and model fine-tuning. Supports multiple output formats (rag, finetuning, simple) with automatic category detection and validation.",
                 "inputSchema": {
@@ -630,6 +647,70 @@ class MCPServer:
                             {
                                 "type": "text",
                                 "text": f"Error indexing RAG: {str(e)}"
+                            }
+                        ],
+                        "isError": True
+                    }
+
+            elif name == "dyag_generate_evaluation_report":
+                try:
+                    from dyag.commands.generate_evaluation_report import run_generate_evaluation_report
+                    from argparse import Namespace
+
+                    # Verify input file exists
+                    input_path = Path(arguments["input"])
+                    if not input_path.exists():
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"Input file not found: {arguments['input']}"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                    # Determine output path
+                    output_path = arguments.get("output")
+                    if not output_path:
+                        output_path = f"{input_path.stem}_report.md"
+
+                    # Create args namespace
+                    args = Namespace(
+                        input=str(input_path),
+                        output=output_path,
+                        verbose=False
+                    )
+
+                    # Run the command
+                    result_code = run_generate_evaluation_report(args)
+
+                    if result_code == 0:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": f"**Evaluation Report Generated Successfully**\n\nOutput file: {output_path}\n\nThe report includes:\n- Similarity metrics and quality analysis\n- Detailed question-by-question breakdown\n- Chunk distribution analysis\n- Recommendations for improvement"
+                                }
+                            ]
+                        }
+                    else:
+                        return {
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Failed to generate evaluation report"
+                                }
+                            ],
+                            "isError": True
+                        }
+
+                except Exception as e:
+                    return {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"Error generating report: {str(e)}"
                             }
                         ],
                         "isError": True

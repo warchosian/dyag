@@ -29,6 +29,22 @@ from dyag.commands.rag_stats import register_rag_stats_command
 from dyag.commands.json2md import register_json2md_command
 from dyag.commands.parkjson2md import register_parkjson2md_command
 from dyag.commands.parkjson2json import register_parkjson2json_command
+
+def register_generate_evaluation_report_command(subparsers):
+    """Register generate-evaluation-report command"""
+    from dyag.commands.generate_evaluation_report import run_generate_evaluation_report
+
+    parser = subparsers.add_parser(
+        "generate-evaluation-report",
+        help="Générer un rapport d'analyse détaillé des résultats d'évaluation RAG"
+    )
+
+    parser.add_argument("input", help="Fichier JSON des résultats d'évaluation")
+    parser.add_argument("--output", help="Fichier de sortie (défaut: {input}_report.md)", default=None)
+    parser.add_argument("-v", "--verbose", action="store_true", help="Mode verbeux")
+
+    parser.set_defaults(func=run_generate_evaluation_report)
+
 def register_generate_questions_command(subparsers):
     """Register generate-questions command"""
     from dyag.commands.generate_questions import run_generate_questions
@@ -78,5 +94,6 @@ __all__ = [
     "register_json2md_command",
     "register_parkjson2md_command",
     "register_parkjson2json_command",
-    "register_generate_questions_command"
+    "register_generate_questions_command",
+    "register_generate_evaluation_report_command"
 ]
