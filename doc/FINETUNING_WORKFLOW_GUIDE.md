@@ -116,7 +116,7 @@ EOF
        - Comprendre la structure
 
 2. 🔨 CRÉATION DU DATASET
-   └─> dyag create_rag
+   └─> dyag markdown-to-rag
        - Génération automatique de questions/réponses
        - Format OpenAI compatible (.jsonl)
        - Validation de la qualité
@@ -140,7 +140,7 @@ EOF
        - Export du modèle
 
 6. 📈 ÉVALUATION
-   └─> dyag evaluate_rag (avec modèle fine-tuné)
+   └─> dyag evaluate-rag (avec modèle fine-tuné)
        - Métriques de performance
        - Comparaison avec baseline
        - Analyse des erreurs
@@ -243,7 +243,7 @@ Exemple :
 **Commande CLI :**
 ```bash
 # Créer le dataset de fine-tuning
-dyag create_rag \
+dyag markdown-to-rag \
   examples/test-mygusi/applicationsIA_mini_normalized.json \
   --output training/finetuning_dataset.jsonl \
   --num-questions 1000 \
@@ -755,7 +755,7 @@ python -c "
 import os
 os.environ['LLM_PROVIDER'] = 'openai'
 os.environ['LLM_MODEL'] = os.environ['FINETUNED_MODEL']
-" && dyag evaluate_rag \
+" && dyag evaluate-rag \
   training/test.jsonl \
   --collection applications_ia \
   --output evaluation/finetuned_results.json \
@@ -768,7 +768,7 @@ os.environ['LLM_MODEL'] = os.environ['FINETUNED_MODEL']
 export LLM_PROVIDER=ollama
 export LLM_MODEL=applications-ia
 
-dyag evaluate_rag \
+dyag evaluate-rag \
   training/test.jsonl \
   --collection applications_ia \
   --output evaluation/finetuned_local_results.json \

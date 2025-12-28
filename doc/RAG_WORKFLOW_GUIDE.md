@@ -106,13 +106,13 @@ ollama list
    └─> Comprendre la structure JSON
 
 2. 🔧 PRÉPARATION & CHUNKING
-   └─> dyag prepare_rag
+   └─> dyag prepare-rag
        - Normalisation des données
        - Découpage en chunks optimaux
        - Nettoyage et enrichissement
 
 3. 📇 INDEXATION
-   └─> dyag index_rag
+   └─> dyag index-rag
        - Création des embeddings
        - Stockage dans ChromaDB
        - Indexation vectorielle
@@ -123,13 +123,13 @@ ollama list
        - Test de connexion
 
 5. 💬 INTERROGATION
-   └─> dyag query_rag
+   └─> dyag query-rag
        - Recherche sémantique
        - Génération de réponse
        - Citations des sources
 
 6. 📊 ÉVALUATION
-   └─> dyag evaluate_rag
+   └─> dyag evaluate-rag
        - Création dataset de test
        - Métriques de qualité
        - Analyse des erreurs
@@ -251,7 +251,7 @@ Chunk 3 = [descriptif + acteurs + sites] (overlap)
 **Commande CLI :**
 ```bash
 # Créer les chunks avec la stratégie optimale
-dyag prepare_rag \
+dyag prepare-rag \
   examples/test-mygusi/applicationsIA_mini_normalized.json \
   --output prepared/applications_chunks.jsonl \
   --chunk-strategy semantic \
@@ -429,7 +429,7 @@ L'indexation transforme vos chunks en **vecteurs numériques** (embeddings) qui 
 **Commande CLI :**
 ```bash
 # Indexer les chunks dans ChromaDB
-dyag index_rag \
+dyag index-rag \
   prepared/applications_chunks.jsonl \
   --collection applications_ia \
   --chroma-path ./chroma_db \
@@ -582,7 +582,7 @@ Réponse: Bonjour ! Comment puis-je vous aider aujourd'hui ?
 **Commande CLI :**
 ```bash
 # Poser une question au RAG
-dyag query_rag \
+dyag query-rag \
   "Qu'est-ce que l'application 6tzen ?" \
   --collection applications_ia \
   --n-chunks 5 \
@@ -656,16 +656,16 @@ Source: application_1238
 
 ```bash
 # Question sur le statut
-dyag query_rag "Quelles applications sont en production ?" --collection applications_ia
+dyag query-rag "Quelles applications sont en production ?" --collection applications_ia
 
 # Question sur un domaine métier
-dyag query_rag "Liste les applications du domaine biodiversité" --collection applications_ia
+dyag query-rag "Liste les applications du domaine biodiversité" --collection applications_ia
 
 # Question comparative
-dyag query_rag "Quelle est la différence entre 6tzen et SINP ?" --collection applications_ia
+dyag query-rag "Quelle est la différence entre 6tzen et SINP ?" --collection applications_ia
 
 # Question avec contexte
-dyag query_rag "Qui sont les acteurs responsables de 6tzen ?" --collection applications_ia
+dyag query-rag "Qui sont les acteurs responsables de 6tzen ?" --collection applications_ia
 ```
 
 ### 5.3 Ajuster le nombre de chunks
@@ -682,7 +682,7 @@ Le paramètre `--n-chunks` (ou `n_chunks` pour MCP) est crucial :
 # Tester avec différents nombres de chunks
 for n in 3 5 10; do
   echo "=== Test avec $n chunks ==="
-  dyag query_rag "Qu'est-ce que 6tzen ?" --collection applications_ia --n-chunks $n
+  dyag query-rag "Qu'est-ce que 6tzen ?" --collection applications_ia --n-chunks $n
 done
 ```
 
@@ -702,7 +702,7 @@ Un bon dataset d'évaluation contient des paires question/réponse de référenc
 **Commande CLI pour créer le dataset :**
 ```bash
 # Créer un dataset d'évaluation automatiquement
-dyag create_rag \
+dyag markdown-to-rag \
   examples/test-mygusi/applicationsIA_mini_normalized.json \
   --output evaluation/test_dataset.jsonl \
   --num-questions 20 \
@@ -729,7 +729,7 @@ dyag create_rag \
 **Commande CLI :**
 ```bash
 # Évaluer le RAG sur le dataset de test
-dyag evaluate_rag \
+dyag evaluate-rag \
   evaluation/test_dataset.jsonl \
   --collection applications_ia \
   --output evaluation/results.json \
@@ -833,7 +833,7 @@ Basé sur l'évaluation, vous pouvez avoir :
 cat evaluation/results.json
 
 # 2. Ajuster le chunking si nécessaire
-dyag prepare_rag \
+dyag prepare-rag \
   examples/test-mygusi/applicationsIA_mini_normalized.json \
   --output prepared/applications_chunks_v2.jsonl \
   --chunk-size 800 \        # Réduit de 1000
@@ -841,13 +841,13 @@ dyag prepare_rag \
   --chunk-strategy semantic
 
 # 3. Ré-indexer
-dyag index_rag \
+dyag index-rag \
   prepared/applications_chunks_v2.jsonl \
   --collection applications_ia_v2 \
   --reset
 
 # 4. Re-tester
-dyag evaluate_rag \
+dyag evaluate-rag \
   evaluation/test_dataset.jsonl \
   --collection applications_ia_v2 \
   --output evaluation/results_v2.json
@@ -885,11 +885,11 @@ print(f'Amélioration: {(v2[\"accuracy\"] - v1[\"accuracy\"])*100:+.1f}%')
 
 | Commande CLI | Commande MCP | Status |
 |--------------|--------------|---------|
-| `dyag prepare_rag` | `dyag_prepare_rag` | ⚠️ **À ajouter** |
-| `dyag index_rag` | `dyag_index_rag` | ✅ Disponible |
-| `dyag query_rag` | `dyag_rag_query` | ✅ Disponible |
-| `dyag evaluate_rag` | `dyag_evaluate_rag` | ✅ Disponible |
-| `dyag create_rag` | `dyag_create_rag` | ⚠️ **À ajouter** |
+| `dyag prepare-rag` | `dyag_prepare_rag` | ⚠️ **À ajouter** |
+| `dyag index-rag` | `dyag_index_rag` | ✅ Disponible |
+| `dyag query-rag` | `dyag_rag_query` | ✅ Disponible |
+| `dyag evaluate-rag` | `dyag_evaluate_rag` | ✅ Disponible |
+| `dyag markdown-to-rag` | `dyag_create_rag` | ⚠️ **À ajouter** |
 | `dyag analyze_training` | `dyag_analyze_training` | ✅ Disponible |
 
 #### Nouvelles commandes proposées (détails dans le Journal)
@@ -950,7 +950,7 @@ pip install -r requirements-rag.txt
 **Problème : "Collection not found"**
 ```bash
 # Solution: Ré-indexer
-dyag index_rag prepared/applications_chunks.jsonl --collection applications_ia --reset
+dyag index-rag prepared/applications_chunks.jsonl --collection applications_ia --reset
 ```
 
 **Problème : "Ollama connection refused"**
@@ -975,7 +975,7 @@ echo "OPENAI_API_KEY=sk-proj-votre-clé" >> .env
 
 ```bash
 # Modèle plus performant mais plus lourd
-dyag index_rag \
+dyag index-rag \
   prepared/applications_chunks.jsonl \
   --collection applications_ia_advanced \
   --embedding-model all-mpnet-base-v2 \  # Plus précis
