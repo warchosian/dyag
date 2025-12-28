@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "dyag"
-version = "0.8.0"
-description = "Dyag - Markdown to HTML converter with diagram support (Graphviz, PlantUML, Mermaid)"
+version = "2.0.0"
+description = "Dyag - Document processing toolkit with RAG, Fine-Tuning, and diagram support"
 authors = ["MARCHAL Hervé <herve.marchal@developpement-durable.gouv.fr>"]
 readme = "README.md"
 packages = [{include = "dyag", from = "src"}]
@@ -31,6 +31,17 @@ python-dotenv = {version = "^1.0.1", optional = true}
 loguru = {version = "^0.7.2", optional = true}
 streamlit = {version = "^1.31.1", optional = true}
 
+# Fine-tuning dependencies (optional)
+torch = {version = "^2.0.0", optional = true}
+transformers = {version = "^4.36.0", optional = true}
+datasets = {version = "^2.14.0", optional = true}
+peft = {version = "^0.7.0", optional = true}
+trl = {version = "^0.7.4", optional = true}
+accelerate = {version = "^0.24.0", optional = true}
+bitsandbytes = {version = "^0.41.0", optional = true}
+sentencepiece = {version = "^0.1.99", optional = true}
+protobuf = {version = "^3.20.0", optional = true}
+
 [tool.poetry.extras]
 rag = [
     "chromadb",
@@ -45,6 +56,40 @@ rag = [
     "python-dotenv",
     "loguru",
     "streamlit"
+]
+finetuning = [
+    "torch",
+    "transformers",
+    "datasets",
+    "peft",
+    "trl",
+    "accelerate",
+    "bitsandbytes",
+    "sentencepiece",
+    "protobuf"
+]
+all = [
+    "chromadb",
+    "sentence-transformers",
+    "openai",
+    "anthropic",
+    "langchain",
+    "langchain-openai",
+    "langchain-community",
+    "tiktoken",
+    "pydantic",
+    "python-dotenv",
+    "loguru",
+    "streamlit",
+    "torch",
+    "transformers",
+    "datasets",
+    "peft",
+    "trl",
+    "accelerate",
+    "bitsandbytes",
+    "sentencepiece",
+    "protobuf"
 ]
 
 [tool.poetry.group.dev.dependencies]
