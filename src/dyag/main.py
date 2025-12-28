@@ -32,6 +32,7 @@ from dyag.commands import (
     register_analyze_training_command,
     register_prepare_rag_command,
     register_evaluate_rag_command,
+    register_compare_rag_command,
     register_index_rag_command,
     register_query_rag_command,
     register_markdown_to_rag_command,
@@ -40,8 +41,21 @@ from dyag.commands import (
     register_json2md_command,
     register_parkjson2md_command,
     register_parkjson2json_command,
+    register_json2jsonl_command,
     register_generate_questions_command,
-    register_generate_evaluation_report_command
+    register_generate_evaluation_report_command,
+    register_merge_evaluation_command,
+    register_analyze_evaluation_command,
+    register_web_server_command
+)
+
+# Fine-tuning commands
+from dyag.finetuning.commands import (
+    register_generate_training_command,
+    register_finetune_command,
+    register_query_finetuned_command,
+    register_evaluate_finetuned_command,
+    register_compare_models_command
 )
 
 
@@ -86,6 +100,7 @@ def create_parser():
     register_analyze_training_command(subparsers)
     register_prepare_rag_command(subparsers)
     register_evaluate_rag_command(subparsers)
+    register_compare_rag_command(subparsers)
     register_index_rag_command(subparsers)
     register_query_rag_command(subparsers)
     register_markdown_to_rag_command(subparsers)
@@ -94,8 +109,19 @@ def create_parser():
     register_json2md_command(subparsers)
     register_parkjson2md_command(subparsers)
     register_parkjson2json_command(subparsers)
+    register_json2jsonl_command(subparsers)
     register_generate_questions_command(subparsers)
     register_generate_evaluation_report_command(subparsers)
+    register_merge_evaluation_command(subparsers)
+    register_analyze_evaluation_command(subparsers)
+    register_web_server_command(subparsers)
+
+    # Fine-tuning commands
+    register_query_finetuned_command(subparsers)
+    register_generate_training_command(subparsers)
+    register_finetune_command(subparsers)
+    register_evaluate_finetuned_command(subparsers)
+    register_compare_models_command(subparsers)
 
     return parser
 
