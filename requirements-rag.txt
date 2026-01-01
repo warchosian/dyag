@@ -3,6 +3,8 @@
 
 # === Base vectorielle ===
 chromadb==0.4.22
+numpy<2.0  # ChromaDB 0.4.22 incompatible avec NumPy 2.0
+scipy<1.14  # Scipy 1.14+ requiert NumPy 2.0
 
 # === Embeddings ===
 sentence-transformers==2.3.1
