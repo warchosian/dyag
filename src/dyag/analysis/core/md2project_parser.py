@@ -73,7 +73,24 @@ class Md2ProjectParser:
         Returns:
             ProjectStructure contenant tous les fichiers extraits
         """
-        content = Path(md_path).read_text(encoding='utf-8')
+        # Essayer plusieurs encodages (comme project2md)
+        encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252', 'iso-8859-1']
+        content = None
+        last_error = None
+
+        for encoding in encodings:
+            try:
+                content = Path(md_path).read_text(encoding=encoding)
+                if self.verbose:
+                    print(f"[INFO] Fichier lu avec encodage: {encoding}")
+                break
+            except (UnicodeDecodeError, LookupError) as e:
+                last_error = e
+                continue
+
+        if content is None:
+            raise last_error or Exception(f"Impossible de lire {md_path} avec les encodages supportés")
+
         return self.parse_content(content)
 
     def parse_content(self, content: str) -> ProjectStructure:
@@ -132,7 +149,7 @@ class Md2ProjectParser:
 
         Format attendu :
         ### 📄 `path/to/file.ext` [size octets]
-        <a id="anchor"></a> [↩ Retour...]
+        ### ?? `path/to/file.ext` [size octets]  (emojis corrompus)
 
         > **Chemin relatif** : `path`
         > **Taille** : X octets
@@ -145,24 +162,32 @@ class Md2ProjectParser:
         """
         files = []
 
-        # Trouver la section "Contenu des fichiers"
+        # Trouver la section "Contenu des fichiers" (optionnel)
+        # Accepter plusieurs formats:
+        # - ## 📄 Contenu des fichiers (original UTF-8)
+        # - ## ?? Contenu (emojis corrompus en latin-1)
+        # - Ou scanner tout le document si pas de section
         content_section_match = re.search(
-            r'##\s+📄\s+Contenu des fichiers\s*\n(.+)',
+            r'##\s+(?:📄|📁|\?\?)\s+(?:Contenu des fichiers|Arborescence|Contenu)\s*\n(.+)',
             content,
             re.DOTALL
         )
 
-        if not content_section_match:
+        if content_section_match:
+            content_section = content_section_match.group(1)
             if self.verbose:
-                print("[WARNING] Section 'Contenu des fichiers' non trouvée")
-            return files
+                print("[INFO] Section 'Contenu' trouvée")
+        else:
+            # Pas de section trouvée, scanner tout le document
+            if self.verbose:
+                print("[WARNING] Section 'Contenu des fichiers' non trouvée - scan du document entier")
+            content_section = content
 
-        content_section = content_section_match.group(1)
-
-        # Split par les headers de fichiers ### 📄
-        # Pattern : ### 📄 `path` [size]
+        # Split par les headers de fichiers
+        # Pattern flexible : ### [emoji, ??, ou rien] `path` [size]
+        # Plus tolérant pour gérer fichiers mal formés ou encodages différents
         file_pattern = re.compile(
-            r'###\s+📄\s+`([^`]+)`\s+\[([^\]]+)\](.+?)(?=###\s+📄|---\n\*Généré par|$)',
+            r'###[^`]*`([^`]+)`\s*\[([^\]]+)\](.+?)(?=###[^`]*`|---.*Généré par|$)',
             re.DOTALL
         )
 
