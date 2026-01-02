@@ -184,16 +184,20 @@ class Md2ProjectParser:
             content_section = content
 
         # Split par les headers de fichiers
-        # Pattern flexible : ### [emoji, ??, ou rien] `path` [size]
-        # Plus tolérant pour gérer fichiers mal formés ou encodages différents
+        # Pattern ultra-flexible :
+        # - ## ou ### ou #### (2+ dièses)
+        # - Suivi de texte quelconque (??, "Fichier N:", emoji, etc.)
+        # - Puis `nom_du_fichier` entre backticks
+        # - Optionnellement [size] après
+        # Note: On capture TOUT jusqu'au prochain header ou fin de doc
         file_pattern = re.compile(
-            r'###[^`]*`([^`]+)`\s*\[([^\]]+)\](.+?)(?=###[^`]*`|---.*Généré par|$)',
-            re.DOTALL
+            r'^#{2,}[^`]*`([^`]+)`(?:\s*\[([^\]]+)\])?(.*?)(?=^#{2,}[^`]*`|---.*?Généré par|\Z)',
+            re.DOTALL | re.MULTILINE
         )
 
         for match in file_pattern.finditer(content_section):
             file_path = match.group(1).strip()
-            size_str = match.group(2).strip()
+            size_str = match.group(2).strip() if match.group(2) else None
             file_content_block = match.group(3)
 
             if self.verbose:
@@ -202,14 +206,15 @@ class Md2ProjectParser:
             # Créer l'entrée de fichier
             file_entry = FileEntry(path=file_path, content="")
 
-            # Extraire la taille
-            size_match = re.search(r'([\d.]+)\s+octets', size_str)
-            if size_match:
-                size_text = size_match.group(1).replace('.', '')  # Enlever séparateur de milliers
-                try:
-                    file_entry.size = int(size_text)
-                except ValueError:
-                    pass
+            # Extraire la taille (si présente)
+            if size_str:
+                size_match = re.search(r'([\d.]+)\s+octets', size_str)
+                if size_match:
+                    size_text = size_match.group(1).replace('.', '')  # Enlever séparateur de milliers
+                    try:
+                        file_entry.size = int(size_text)
+                    except ValueError:
+                        pass
 
             # Extraire les métadonnées du bloc quote
             self._extract_file_metadata(file_content_block, file_entry)
@@ -268,7 +273,8 @@ class Md2ProjectParser:
 
         # Pattern pour extraire le contenu entre les fences
         # Utilise re.DOTALL pour matcher sur plusieurs lignes
-        pattern = re.escape(fence) + r'(?:\w*)\n(.+?)\n' + re.escape(fence)
+        # Rendre le newline final optionnel et accepter contenu vide
+        pattern = re.escape(fence) + r'(?:\w*)\n(.*?)\n?' + re.escape(fence)
         content_match = re.search(pattern, block, re.DOTALL)
 
         if content_match:
