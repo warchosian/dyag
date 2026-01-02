@@ -1,38 +1,56 @@
 """
-Commands module for dyag.
-Contains all command implementations.
+Commands module for dyag - LEGACY
+
+Ce module est conservé pour compatibilité ascendante.
+Les nouvelles commandes sont organisées dans les modules spécialisés:
+- dyag.conversion.commands
+- dyag.processing.commands
+- dyag.analysis.commands
+- dyag.rag.commands
+- dyag.park.commands
+- dyag.mcp.commands
 """
 
-from dyag.commands.img2pdf import register_img2pdf_command
-from dyag.commands.compresspdf import register_compresspdf_command
-from dyag.commands.md2html import register_md2html_command
-from dyag.commands.html2md import register_html2md_command
-from dyag.commands.concat_html import register_concat_html_command
-from dyag.commands.add_toc4md import register_add_toc4md_command
-from dyag.commands.add_toc4html import register_add_toc4html_command
-from dyag.commands.html2pdf import register_html2pdf_command
-from dyag.commands.project2md import register_project2md_command
-from dyag.commands.make_interactive import register_make_interactive_command
-from dyag.commands.flatten_wikisi import register_flatten_wikisi_command
-from dyag.commands.flatten_md import register_flatten_md_command
-from dyag.commands.flatten_html import register_flatten_html_command
-from dyag.commands.merge_md import register_merge_md_command
-from dyag.commands.merge_html import register_merge_html_command
-from dyag.commands.analyze_training import register_analyze_training_command
-from dyag.commands.prepare_rag import register_prepare_rag_command
-from dyag.commands.evaluate_rag import register_evaluate_rag_command
-from dyag.commands.index_rag import register_index_rag_command
-from dyag.commands.query_rag import register_query_rag_command
-from dyag.commands.markdown_to_rag import register_markdown_to_rag_command
-from dyag.commands.test_rag import register_test_rag_command
-from dyag.commands.rag_stats import register_rag_stats_command
-from dyag.commands.json2md import register_json2md_command
-from dyag.commands.parkjson2md import register_parkjson2md_command
-from dyag.commands.parkjson2json import register_parkjson2json_command
+# Import depuis les nouveaux emplacements
+from dyag.conversion.commands.img2pdf import register_img2pdf_command
+from dyag.processing.commands.compress_pdf import register_compresspdf_command
+from dyag.conversion.commands.md2html import register_md2html_command
+from dyag.conversion.commands.html2md import register_html2md_command
+from dyag.processing.commands.concat_html import register_concat_html_command
+from dyag.processing.commands.add_toc4md import register_add_toc4md_command
+from dyag.processing.commands.add_toc4html import register_add_toc4html_command
+from dyag.conversion.commands.html2pdf import register_html2pdf_command
+from dyag.analysis.commands.project2md import register_project2md_command
+from dyag.analysis.commands.md2project import register_md2project_command
+from dyag.processing.commands.make_interactive import register_make_interactive_command
+from dyag.processing.commands.flatten_wikisi import register_flatten_wikisi_command
+from dyag.processing.commands.flatten_md import register_flatten_md_command
+from dyag.processing.commands.flatten_html import register_flatten_html_command
+from dyag.processing.commands.merge_md import register_merge_md_command
+from dyag.processing.commands.merge_html import register_merge_html_command
+from dyag.analysis.commands.analyze_training import register_analyze_training_command
+from dyag.rag.commands import (
+    register_prepare_rag_command,
+    register_evaluate_rag_command,
+    register_compare_rag_command,
+    register_index_rag_command,
+    register_query_rag_command,
+    register_markdown_to_rag_command,
+    register_test_rag_command,
+    register_rag_stats_command,
+    register_show_evaluation_command,
+    register_compare_evaluations_command,
+)
+from dyag.conversion.commands.json2md import register_json2md_command
+from dyag.park.commands.json2md_park import register_parkjson2md_command
+from dyag.park.commands.json2json_park import register_parkjson2json_command
+from dyag.conversion.commands.json2jsonl import register_json2jsonl_command
+from dyag.web.commands.web_server import register_web_server_command
+from dyag.encoding.commands import register_chk_utf8_command, register_fix_utf8_command
 
 def register_generate_evaluation_report_command(subparsers):
     """Register generate-evaluation-report command"""
-    from dyag.commands.generate_evaluation_report import run_generate_evaluation_report
+    from dyag.analysis.commands.generate_evaluation_report import run_generate_evaluation_report
 
     parser = subparsers.add_parser(
         "generate-evaluation-report",
@@ -47,7 +65,7 @@ def register_generate_evaluation_report_command(subparsers):
 
 def register_generate_questions_command(subparsers):
     """Register generate-questions command"""
-    from dyag.commands.generate_questions import run_generate_questions
+    from dyag.analysis.commands.generate_questions import run_generate_questions
 
     parser = subparsers.add_parser(
         "generate-questions",
@@ -66,6 +84,36 @@ def register_generate_questions_command(subparsers):
     parser.add_argument("-v", "--verbose", action="store_true", help="Mode verbeux")
 
     parser.set_defaults(func=run_generate_questions)
+
+def register_merge_evaluation_command(subparsers):
+    """Register merge-evaluation command"""
+    from dyag.analysis.commands.merge_evaluation import run_merge_evaluation
+
+    parser = subparsers.add_parser(
+        "merge-evaluation",
+        help="Fusionner plusieurs fichiers de résultats d'évaluation RAG"
+    )
+
+    parser.add_argument("files", nargs='*', help="Fichiers batch à fusionner (supporte wildcards)")
+    parser.add_argument("--output", "-o", default="evaluation/results_merged.json", help="Fichier de sortie (défaut: evaluation/results_merged.json)")
+    parser.add_argument("--pattern", "-p", help='Pattern glob pour auto-découverte (ex: "evaluation/results_*_batch*.json")')
+    parser.add_argument("-v", "--verbose", action="store_true", help="Afficher progression détaillée")
+
+    parser.set_defaults(func=run_merge_evaluation)
+
+def register_analyze_evaluation_command(subparsers):
+    """Register analyze-evaluation command"""
+    from dyag.analysis.commands.analyze_evaluation import run_analyze_evaluation
+
+    parser = subparsers.add_parser(
+        "analyze-evaluation",
+        help="Analyser les résultats d'évaluation RAG"
+    )
+
+    parser.add_argument("results_file", help="Fichier JSON de résultats à analyser")
+    parser.add_argument("--detailed", "-d", action="store_true", help="Afficher analyses détaillées (apps, top échecs, distributions)")
+
+    parser.set_defaults(func=run_analyze_evaluation)
 
 __all__ = [
     "register_img2pdf_command",
@@ -86,14 +134,23 @@ __all__ = [
     "register_analyze_training_command",
     "register_prepare_rag_command",
     "register_evaluate_rag_command",
+    "register_compare_rag_command",
     "register_index_rag_command",
     "register_query_rag_command",
     "register_markdown_to_rag_command",
     "register_test_rag_command",
     "register_rag_stats_command",
+    "register_show_evaluation_command",
+    "register_compare_evaluations_command",
     "register_json2md_command",
     "register_parkjson2md_command",
     "register_parkjson2json_command",
+    "register_json2jsonl_command",
     "register_generate_questions_command",
-    "register_generate_evaluation_report_command"
+    "register_generate_evaluation_report_command",
+    "register_merge_evaluation_command",
+    "register_analyze_evaluation_command",
+    "register_web_server_command",
+    "register_chk_utf8_command",
+    "register_fix_utf8_command"
 ]

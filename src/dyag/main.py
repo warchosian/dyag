@@ -23,6 +23,7 @@ from dyag.commands import (
     register_add_toc4html_command,
     register_html2pdf_command,
     register_project2md_command,
+    register_md2project_command,
     register_make_interactive_command,
     register_flatten_wikisi_command,
     register_flatten_md_command,
@@ -38,6 +39,8 @@ from dyag.commands import (
     register_markdown_to_rag_command,
     register_test_rag_command,
     register_rag_stats_command,
+    register_show_evaluation_command,
+    register_compare_evaluations_command,
     register_json2md_command,
     register_parkjson2md_command,
     register_parkjson2json_command,
@@ -46,7 +49,9 @@ from dyag.commands import (
     register_generate_evaluation_report_command,
     register_merge_evaluation_command,
     register_analyze_evaluation_command,
-    register_web_server_command
+    register_web_server_command,
+    register_chk_utf8_command,
+    register_fix_utf8_command
 )
 
 # Fine-tuning commands
@@ -55,7 +60,8 @@ from dyag.finetuning.commands import (
     register_finetune_command,
     register_query_finetuned_command,
     register_evaluate_finetuned_command,
-    register_compare_models_command
+    register_compare_models_command,
+    register_export_to_gguf_command
 )
 
 
@@ -91,6 +97,7 @@ def create_parser():
     register_add_toc4html_command(subparsers)
     register_html2pdf_command(subparsers)
     register_project2md_command(subparsers)
+    register_md2project_command(subparsers)
     register_make_interactive_command(subparsers)
     register_flatten_wikisi_command(subparsers)
     register_flatten_md_command(subparsers)
@@ -106,6 +113,8 @@ def create_parser():
     register_markdown_to_rag_command(subparsers)
     register_test_rag_command(subparsers)
     register_rag_stats_command(subparsers)
+    register_show_evaluation_command(subparsers)
+    register_compare_evaluations_command(subparsers)
     register_json2md_command(subparsers)
     register_parkjson2md_command(subparsers)
     register_parkjson2json_command(subparsers)
@@ -116,12 +125,17 @@ def create_parser():
     register_analyze_evaluation_command(subparsers)
     register_web_server_command(subparsers)
 
+    # Encoding commands
+    register_chk_utf8_command(subparsers)
+    register_fix_utf8_command(subparsers)
+
     # Fine-tuning commands
     register_query_finetuned_command(subparsers)
     register_generate_training_command(subparsers)
     register_finetune_command(subparsers)
     register_evaluate_finetuned_command(subparsers)
     register_compare_models_command(subparsers)
+    register_export_to_gguf_command(subparsers)
 
     return parser
 
