@@ -7,6 +7,7 @@ from .merge_evaluation import run_merge_evaluation
 from .analyze_evaluation import run_analyze_evaluation
 from .project2md import register_project2md_command
 from .md2project import register_md2project_command
+from .fix_encoding import fix_encoding
 
 __all__ = [
     "analyze_training_coverage",
@@ -16,4 +17,5 @@ __all__ = [
     "run_analyze_evaluation",
     "register_project2md_command",
     "register_md2project_command",
+    "fix_encoding",
 ]
