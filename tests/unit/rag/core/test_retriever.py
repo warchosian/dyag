@@ -99,7 +99,10 @@ class TestRAGQuerySystemQuery:
         mock_transformer.return_value = mock_embedder
 
         mock_llm = MagicMock()
-        mock_llm.chat_completion.return_value = {"choices": [{"message": {"content": "Réponse générée"}}], "usage": {"total_tokens": 10}}
+        mock_llm.chat_completion.return_value = {
+            'content': "Réponse générée",
+            'usage': {'total_tokens': 10, 'prompt_tokens': 5, 'completion_tokens': 5}
+        }
         mock_llm.get_model_name.return_value = "test-model"
         mock_llm_factory.create_provider.return_value = mock_llm
 
@@ -110,6 +113,7 @@ class TestRAGQuerySystemQuery:
         assert response is not None
         assert isinstance(response, dict)
         assert "answer" in response
+        assert response["answer"] == "Réponse générée"
         mock_collection.query.assert_called_once()
 
     @patch('dyag.rag.core.retriever.chromadb.PersistentClient')
@@ -163,7 +167,7 @@ class TestRAGQuerySystemQuery:
         mock_transformer.return_value = mock_embedder
 
         rag = RAGQuerySystem()
-        rag.ask("Test", n_chunks=10)
+        rag.ask("Test", n_chunks=10, use_reranking=False)
 
         call_kwargs = mock_collection.query.call_args.kwargs
         assert call_kwargs["n_results"] == 10
@@ -293,7 +297,10 @@ class TestRAGQuerySystemFormatting:
         mock_transformer.return_value = mock_embedder
 
         mock_llm = MagicMock()
-        mock_llm.chat_completion.return_value = {"choices": [{"message": {"content": "Response"}}], "usage": {"total_tokens": 10}}
+        mock_llm.chat_completion.return_value = {
+            'content': "Response",
+            'usage': {'total_tokens': 10, 'prompt_tokens': 5, 'completion_tokens': 5}
+        }
         mock_llm.get_model_name.return_value = "test-model"
         mock_llm_factory.create_provider.return_value = mock_llm
 
@@ -305,6 +312,7 @@ class TestRAGQuerySystemFormatting:
         assert isinstance(response, dict)
         assert "sources" in response
         assert "chunks_used" in response
+        assert "answer" in response
 
     @patch('dyag.rag.core.retriever.chromadb.PersistentClient')
     @patch('dyag.rag.core.retriever.SentenceTransformer')
