@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dyag"
-version = "2.0.0"
+version = "0.8.1"
 description = "Dyag - Document processing toolkit with RAG, Fine-Tuning, and diagram support"
 authors = ["MARCHAL Hervé <herve.marchal@developpement-durable.gouv.fr>"]
 readme = "README.md"
