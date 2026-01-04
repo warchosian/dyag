@@ -26,8 +26,8 @@ class TestLLMProviderFactory:
         'OLLAMA_MODEL': 'llama2',
         'OLLAMA_TIMEOUT': '300'
     })
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_create_ollama_provider(self, mock_post, mock_get):
         """Test création d'un provider Ollama."""
         # Mock de la vérification de connexion Ollama
@@ -101,7 +101,7 @@ class TestLLMProviderFactory:
             )
 
     @patch.dict('os.environ', {}, clear=True)
-    @patch('dyag.rag.core.llm_providers.requests.get')
+    @patch('requests.get')
     def test_auto_detect_provider_no_env(self, mock_get):
         """Test auto-détection sans variables d'environnement."""
         # Mock de la vérification de connexion Ollama
@@ -141,8 +141,8 @@ class TestLLMProviderFactory:
 class TestOllamaProvider:
     """Tests du provider Ollama."""
 
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_generate_success(self, mock_post, mock_get):
         """Test génération réussie avec Ollama."""
         # Mock de la vérification de connexion Ollama
@@ -165,8 +165,8 @@ class TestOllamaProvider:
         assert response == "Réponse générée"
         mock_post.assert_called_once()
 
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_generate_with_context(self, mock_post, mock_get):
         """Test génération avec contexte."""
         # Mock de la vérification de connexion Ollama
@@ -192,8 +192,8 @@ class TestOllamaProvider:
         call_args = mock_post.call_args
         assert context in str(call_args)
 
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_generate_timeout(self, mock_post, mock_get):
         """Test timeout lors de la génération."""
         # Mock de la vérification de connexion Ollama
@@ -201,7 +201,7 @@ class TestOllamaProvider:
         mock_get_response.status_code = 200
         mock_get.return_value = mock_get_response
 
-        from dyag.rag.core.llm_providers import requests
+        import requests
         mock_post.side_effect = requests.Timeout("Connection timeout")
 
         provider = LLMProviderFactory.create_provider("ollama", "llama2")
@@ -209,8 +209,8 @@ class TestOllamaProvider:
         with pytest.raises(Exception, match="timeout|Timeout"):
             provider.generate("Test")
 
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_is_available_success(self, mock_post, mock_get):
         """Test vérification de disponibilité (succès)."""
         # Mock de la vérification de connexion Ollama
@@ -226,8 +226,8 @@ class TestOllamaProvider:
         provider = LLMProviderFactory.create_provider("ollama", "llama2")
         assert provider.is_available() is True
 
-    @patch('dyag.rag.core.llm_providers.requests.get')
-    @patch('dyag.rag.core.llm_providers.requests.post')
+    @patch('requests.get')
+    @patch('requests.post')
     def test_is_available_failure(self, mock_post, mock_get):
         """Test vérification de disponibilité (échec)."""
         # Mock de la vérification de connexion Ollama
@@ -235,7 +235,7 @@ class TestOllamaProvider:
         mock_get_response.status_code = 200
         mock_get.return_value = mock_get_response
 
-        from dyag.rag.core.llm_providers import requests
+        import requests
         mock_post.side_effect = requests.RequestException("Connection failed")
 
         provider = LLMProviderFactory.create_provider("ollama", "llama2")
@@ -363,8 +363,8 @@ class TestProviderComparison:
     """Tests comparatifs entre providers."""
 
     @patch('openai.OpenAI')
-    @patch('dyag.rag.core.llm_providers.requests.post')
-    @patch('dyag.rag.core.llm_providers.requests.get')
+    @patch('requests.post')
+    @patch('requests.get')
     def test_all_providers_same_interface(self, mock_get, mock_post, mock_openai_class):
         """Vérifie que tous les providers ont la même interface."""
         # Mock de la vérification de connexion Ollama
