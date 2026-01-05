@@ -17,10 +17,11 @@ PyMuPDF = "^1.23.0"
 playwright = "^1.40.0"
 markdown = "^3.5"
 python-dotenv = "^1.0.1"
+chromadb = "^0.4.22"
+sentence-transformers = "^2.3.1"
+requests = "^2.31.0"
 
 # RAG dependencies (optional)
-chromadb = {version = "^0.4.22", optional = true}
-sentence-transformers = {version = "^2.3.1", optional = true}
 openai = {version = ">=1.20", optional = true}
 anthropic = {version = ">=0.34.0", optional = true}
 langchain = {version = "^0.1.9", optional = true}
@@ -44,8 +45,6 @@ protobuf = {version = "^3.20.0", optional = true}
 
 [tool.poetry.extras]
 rag = [
-    "chromadb",
-    "sentence-transformers",
     "openai",
     "anthropic",
     "langchain",
@@ -68,8 +67,6 @@ finetuning = [
     "protobuf"
 ]
 all = [
-    "chromadb",
-    "sentence-transformers",
     "openai",
     "anthropic",
     "langchain",
